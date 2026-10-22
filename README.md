@@ -75,9 +75,9 @@ overview then shows how many sign-ups each source brought in. Invite links
    (`APP_URL=https://agyal.net`, `AUTH_SECRET`, `ADMIN_PASSWORD`,
    `AUTH_GOOGLE_ID/SECRET`, `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`,
    `OWNER_EMAIL`, `NEXT_PUBLIC_CAL_URL`).
-4. **Settings → Build**: set the build command to `npm run vercel-build`,
-   which also applies database migrations. Deploy, then run `npm run seed` once
-   against the production database (or add the rates in `/admin`).
+4. Deploy. `vercel.json` makes Vercel run `npm run vercel-build`, which also
+   applies database migrations. Then run `npm run seed` once against the
+   production database (or add the rates in `/admin`).
 5. **Domains**: add `agyal.net` and create the DNS records Vercel shows.
 6. **Email**: in Resend, add the domain `agyal.net` and create its DNS records.
    To receive mail at hello@agyal.net in Gmail, set up free forwarding with
