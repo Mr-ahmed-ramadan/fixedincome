@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonths, buildSchedule, couponDates } from "./schedule";
+import { addMonths, buildSchedule, couponDates, payPattern } from "./schedule";
 
 const d = (s: string) => new Date(`${s}T12:00:00Z`);
 
@@ -41,5 +41,13 @@ describe("buildSchedule", () => {
     const s = buildSchedule({ amount: 100_000, yieldPct: 8.77, couponsPerYear: 2, couponRatePct: 6.875, maturity: d("2040-04-30"), settle: d("2026-10-22") });
     expect(s.pricePer100).toBeLessThan(90);
     expect(s.faceValue).toBeGreaterThan(110_000);
+  });
+});
+
+describe("payPattern", () => {
+  it("says T-bills pay once and bonds pay every few months", () => {
+    expect(payPattern(0, d("2027-10-13"), d("2026-10-22"))).toEqual({ once: true });
+    expect(payPattern(2, d("2029-03-01"), d("2026-10-22"))).toEqual({ once: false, count: 5, everyMonths: 6 });
+    expect(payPattern(1, d("2031-04-11"), d("2026-10-22"))).toEqual({ once: false, count: 5, everyMonths: 12 });
   });
 });

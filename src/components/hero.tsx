@@ -67,7 +67,7 @@ export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
 
           <div className="flex flex-wrap gap-3" data-reveal data-reveal-delay="3">
             <a href={`/${locale}#join`} className="btn-primary">{t.hero.cta}</a>
-            <a href={`/${locale}#compare`} className="btn-ghost">{t.hero.ratesMore}</a>
+            <a href={`/${locale}#yields`} className="btn-ghost">{t.hero.ratesMore}</a>
           </div>
           <a href={`/${locale}#partners`} className="w-fit text-sm font-medium text-primary hover:underline">
             {t.hero.partnerLine} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span>
@@ -78,7 +78,7 @@ export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
           <PhoneScreens
             locale={locale}
             brand={t.brand}
-            atMaturity={t.yields.atMaturity}
+            atMaturity={t.yields.atMaturityShort}
             couponLabels={couponLabels}
             t={t.phone}
             rates={rates}

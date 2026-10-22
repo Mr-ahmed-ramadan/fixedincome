@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { pageLocale, otherLocalePath } from "@/lib/page-locale";
+import { payPattern } from "@/lib/schedule";
 import { formatAsOf } from "@/lib/yields";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
@@ -40,6 +40,8 @@ export default async function SecurityPage({ params }: { params: Promise<{ local
   const currencyName = t.yields.currencies[q.currency as "EGP" | "USD" | "EUR"] ?? q.currency;
   const defaultAmount = Math.max(q.minInvestment ?? 0, DEFAULT_AMOUNT[q.currency] ?? 10_000);
   const bankLabel = locale === "ar" ? q.bankLabelAr : q.bankLabelEn;
+  const pattern = payPattern(q.couponsPerYear, maturity, settle);
+  const howPays = pattern.once ? s.howPaysBill : s.howPaysBond(pattern.count, s.every(pattern.everyMonths), formatAsOf(maturity, locale));
 
   const facts: [string, React.ReactNode][] = [
     [s.issuer, intl ? s.issuers.intl : s.issuers.local],
@@ -59,9 +61,10 @@ export default async function SecurityPage({ params }: { params: Promise<{ local
     <>
       <Header t={t} locale={locale} switchHref={otherLocalePath(locale, `/securities/${q.id}`)} />
       <main className="mx-auto grid max-w-site gap-6 px-4 py-8 sm:px-6 sm:py-12">
-        <Link href={`/${locale}#yields`} className="w-fit text-sm font-medium text-primary hover:underline">
+        {/* A plain link (full page load) so the landing page and its rates tab open fresh. */}
+        <a href={`/${locale}?ccy=${q.currency}#yields`} className="w-fit py-1 text-sm font-medium text-primary hover:underline">
           <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {s.back}
-        </Link>
+        </a>
 
         <div className="grid gap-3">
           <div className="flex flex-wrap gap-2 text-xs font-semibold">
@@ -75,10 +78,21 @@ export default async function SecurityPage({ params }: { params: Promise<{ local
           </p>
         </div>
 
-        <section className="grid gap-2 rounded-3xl bg-card p-5 ring-1 ring-line/60 sm:p-6">
-          <h2 className="text-lg font-semibold">{s.plainTitle}</h2>
-          <p className="max-w-3xl leading-relaxed text-ink/85">{s.plain[q.instrument] ?? s.plain.BOND}</p>
-        </section>
+        <div className="grid gap-4 md:grid-cols-2">
+          <section className="grid content-start gap-2 rounded-3xl bg-card p-5 ring-1 ring-line/60 sm:p-6">
+            <h2 className="text-lg font-semibold">{s.plainTitle}</h2>
+            <p className="leading-relaxed text-ink/85">{s.plain[q.instrument] ?? s.plain.BOND}</p>
+          </section>
+          <section className="grid content-start gap-2 rounded-3xl bg-primary/[.06] p-5 ring-1 ring-primary/20 sm:p-6" id="how-it-pays">
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              {s.howPaysTitle}
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${pattern.once ? "bg-primary/10 text-primary" : "bg-accent/15 text-accent"}`}>
+                {q.couponsPerYear === 0 ? t.yields.atMaturity : t.yields.coupons(q.couponsPerYear)}
+              </span>
+            </h2>
+            <p className="leading-relaxed text-ink/85">{howPays}</p>
+          </section>
+        </div>
 
         <SecurityCalculator
           locale={locale}
@@ -104,6 +118,9 @@ export default async function SecurityPage({ params }: { params: Promise<{ local
             getBack: s.getBack,
             afterTax: q.taxRatePct ? s.afterTax(q.taxRatePct) : null,
             estimate: s.estimate,
+            chartLabel: s.chartLabel,
+            legendCoupon: s.legendCoupon,
+            legendPrincipal: s.legendPrincipal,
             scheduleTitle: s.scheduleTitle,
             scheduleFor: s.scheduleFor,
             date: s.date,

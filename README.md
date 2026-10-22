@@ -39,7 +39,7 @@ Checks: `npm run lint`, `npm run typecheck`, `npm test`.
 
 | Path | What it is |
 | --- | --- |
-| `src/app/[locale]/page.tsx` | The landing page (hero, yields, products, steps, waitlist, partners, FAQ) |
+| `src/app/[locale]/page.tsx` | The landing page (hero, all rates, bank comparison, bonds vs funds, waitlist with steps, partners, FAQ) |
 | `src/i18n/dictionaries.ts` | **All the words on the site and in emails, Arabic and English** |
 | `src/app/[locale]/actions.ts` | Form handling (waitlist, partners, Google sign-in) |
 | `src/lib/waitlist.ts` | Joining, email confirmation, invite links |

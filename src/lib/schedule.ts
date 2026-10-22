@@ -86,3 +86,9 @@ export function buildSchedule(opts: {
   const totalReceived = payments.reduce((s, p) => s + p.total, 0);
   return { payments, pricePer100: price, faceValue: face, totalReceived, totalReturn: totalReceived - amount, years };
 }
+
+/** How a security pays, for the one-line summary: once at maturity, or n payments every k months. */
+export function payPattern(couponsPerYear: number, maturity: Date, settle: Date): { once: true } | { once: false; count: number; everyMonths: number } {
+  if (couponsPerYear === 0) return { once: true };
+  return { once: false, count: couponDates(maturity, couponsPerYear, settle).length, everyMonths: 12 / couponsPerYear };
+}

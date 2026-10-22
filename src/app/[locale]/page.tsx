@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { Hero } from "@/components/hero";
 import { PartnerForm } from "@/components/partner-form";
-import { Faq, HowItWorks, Products, SectionHead } from "@/components/sections";
+import { Faq, HowSteps, SectionHead } from "@/components/sections";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { YieldsBoard } from "@/components/yields-board";
 
@@ -65,9 +65,11 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                   currencies: t.yields.currencies,
                   atMaturity: t.yields.atMaturity,
                   couponLabels: Object.fromEntries([1, 2, 4, 12].map((n) => [n, t.yields.coupons(n)])),
+                  types: t.yields.filters,
                   asOf: t.yields.asOf,
                   empty: t.yields.empty,
                   bankEq: t.yields.bankEq,
+                  soon: t.yields.soon,
                 }}
               />
             </div>
@@ -77,12 +79,13 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
         <Compare t={t} pairs={pairs} />
         <VsFunds t={t} />
-        <Products t={t} />
-        <HowItWorks t={t} />
 
         <section id="join" className="scroll-mt-16 py-20 sm:py-28">
           <div className="mx-auto grid max-w-site items-center gap-12 px-4 sm:px-6 md:grid-cols-2">
-            <SectionHead eyebrow={t.join.eyebrow} title={t.join.title} sub={t.join.sub} />
+            <div className="grid content-start gap-8">
+              <SectionHead eyebrow={t.join.eyebrow} title={t.join.title} sub={t.join.sub} />
+              <HowSteps t={t} />
+            </div>
             <div className="rounded-4xl bg-card p-6 shadow-[0_30px_60px_-30px_rgba(15,22,48,.25)] ring-1 ring-line/60 sm:p-8" data-reveal data-reveal-delay="1">
               <WaitlistForm
                 locale={locale}

@@ -16,6 +16,9 @@ type Labels = {
   getBack: string;
   afterTax: string | null;
   estimate: string;
+  chartLabel: string;
+  legendCoupon: string;
+  legendPrincipal: string;
   scheduleTitle: string;
   scheduleFor: string;
   date: string;
@@ -113,6 +116,7 @@ export function SecurityCalculator(p: Props) {
             {L.scheduleFor}: <span className="num">{money(amount)}</span>
           </span>
         </div>
+        <PaymentChart payments={s.payments} locale={p.locale} labels={L} />
         <div className="max-h-[28rem] overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-card text-xs text-muted">
@@ -148,5 +152,44 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
       <dt className="text-muted">{k}</dt>
       <dd className="text-end">{v}</dd>
     </div>
+  );
+}
+
+/**
+ * One bar per payment, in date order (right to left in Arabic). Coupons are
+ * drawn short and the final payment tall, since it returns the principal; the
+ * exact amounts are in the table below.
+ */
+function PaymentChart({ payments, locale, labels }: { payments: { date: Date; coupon: number; principal: number }[]; locale: "ar" | "en"; labels: Labels }) {
+  if (payments.length === 0) return null;
+  const year = (d: Date) => d.getUTCFullYear();
+  const first = payments[0].date;
+  const last = payments[payments.length - 1].date;
+  const hasCoupons = payments.some((x) => x.coupon > 0);
+  return (
+    <figure className="grid gap-2" aria-label={labels.chartLabel}>
+      <div className="flex h-24 items-end gap-[3px] border-b border-line" role="img" aria-label={`${labels.chartLabel}: ${payments.length}`}>
+        {payments.map((pay) => (
+          <span
+            key={pay.date.toISOString()}
+            title={longDate(pay.date, locale)}
+            className="flex h-full max-w-6 min-w-[2px] flex-1 flex-col justify-end"
+          >
+            {pay.principal > 0 && <span className="h-[78%] rounded-t-sm bg-primary" />}
+            {pay.coupon > 0 && <span className={`h-[22%] bg-accent ${pay.principal > 0 ? "" : "rounded-t-sm"}`} />}
+          </span>
+        ))}
+      </div>
+      <figcaption className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+        <span className="num">{payments.length > 1 ? year(first) : longDate(first, locale)}</span>
+        <span className="flex gap-3">
+          {hasCoupons && (
+            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-accent" />{labels.legendCoupon}</span>
+          )}
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" />{labels.legendPrincipal}</span>
+        </span>
+        {payments.length > 1 && <span className="num">{year(last)}</span>}
+      </figcaption>
+    </figure>
   );
 }
