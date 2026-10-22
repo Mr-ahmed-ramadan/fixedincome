@@ -1,8 +1,11 @@
 export const CURRENCIES = ["EGP", "USD", "EUR"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
-export const INSTRUMENTS = ["TBILL", "BOND", "SUKUK", "EUROBOND", "CORP"] as const;
+export const INSTRUMENTS = ["TBILL", "BOND", "SUKUK", "EUROBOND", "CORP", "CD", "MMF"] as const;
 export type Instrument = (typeof INSTRUMENTS)[number];
+
+/** Bank CDs and money market funds appear only in the comparison, never on the yields board. */
+export const COMPARISON_ONLY: readonly string[] = ["CD", "MMF"];
 
 export type Quote = {
   id: string;
@@ -13,6 +16,8 @@ export type Quote = {
   tenorMonths: number;
   yieldPct: number;
   couponsPerYear: number;
+  taxRatePct?: number | null;
+  compare?: boolean;
   sortOrder: number;
   asOf: Date | string;
 };
@@ -40,4 +45,18 @@ export function formatAsOf(date: Date | string, locale: "ar" | "en"): string {
     year: "numeric",
     timeZone: "Africa/Cairo",
   }).format(d);
+}
+
+/** What's left of the annual yield after withholding tax, or null when the tax treatment isn't set. */
+export function afterTax(q: Pick<Quote, "yieldPct" | "taxRatePct">): number | null {
+  if (q.taxRatePct == null) return null;
+  return Math.round(q.yieldPct * (1 - q.taxRatePct / 100) * 100) / 100;
+}
+
+/**
+ * Amount received at maturity on a discount instrument (T-bill) bought for
+ * `amount`, using the simple-interest convention CBE quotes yields in.
+ */
+export function maturityValue(amount: number, yieldPct: number, days: number): number {
+  return amount * (1 + (yieldPct / 100) * (days / 365));
 }

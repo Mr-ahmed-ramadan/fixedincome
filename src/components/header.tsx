@@ -6,8 +6,8 @@ import { Wordmark } from "./logo";
 export function Header({ t, locale, switchHref }: { t: Dictionary; locale: Locale; switchHref: string }) {
   const links = [
     ["#yields", t.nav.yields],
+    ["#compare", t.nav.compare],
     ["#products", t.nav.products],
-    ["#how", t.nav.how],
     ["#partners", t.nav.partners],
   ] as const;
   return (

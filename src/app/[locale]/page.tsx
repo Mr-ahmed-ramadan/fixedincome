@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/db";
 import { pageLocale, otherLocalePath } from "@/lib/page-locale";
 import { CAL_URL, googleEnabled } from "@/lib/site";
-import { formatAsOf, groupByCurrency, type Quote } from "@/lib/yields";
+import { COMPARISON_ONLY, formatAsOf, groupByCurrency, type Quote } from "@/lib/yields";
+import { Compare, VsFunds } from "@/components/compare";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { Hero } from "@/components/hero";
@@ -24,16 +25,24 @@ async function loadQuotes(): Promise<Quote[]> {
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale, t } = await pageLocale(params);
-  const groups = groupByCurrency(await loadQuotes()).map((g) => ({
+  const all = await loadQuotes();
+  const board = all.filter((q) => !COMPARISON_ONLY.includes(q.instrument));
+  const comparison = all
+    .filter((q) => q.compare)
+    .sort((a, b) => Number(COMPARISON_ONLY.includes(a.instrument)) - Number(COMPARISON_ONLY.includes(b.instrument)) || a.sortOrder - b.sortOrder);
+  const groups = groupByCurrency(board).map((g) => ({
     currency: g.currency,
     quotes: g.quotes.map((q) => ({ ...q, asOf: new Date(q.asOf).toISOString(), asOfLabel: formatAsOf(q.asOf, locale) })),
   }));
+  const egpBills = groups.find((g) => g.currency === "EGP")?.quotes.filter((q) => q.instrument === "TBILL") ?? [];
+  // Hero highlights: the EGP T-bills plus the first rate in each other currency.
+  const highlights = [...egpBills.slice(0, 3), ...groups.filter((g) => g.currency !== "EGP").map((g) => g.quotes[0])].slice(0, 4);
 
   return (
     <>
       <Header t={t} locale={locale} switchHref={otherLocalePath(locale)} />
       <main>
-        <Hero t={t} locale={locale} quotes={groups[0]?.quotes ?? []} />
+        <Hero t={t} locale={locale} rates={groups[0]?.quotes ?? []} egpBills={egpBills} highlights={highlights} />
 
         <section id="yields" className="scroll-mt-16 py-20 sm:py-28">
           <div className="mx-auto grid max-w-site gap-10 px-4 sm:px-6">
@@ -55,6 +64,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </div>
         </section>
 
+        <Compare t={t} locale={locale} rows={comparison} />
+        <VsFunds t={t} />
         <Products t={t} />
         <HowItWorks t={t} />
 

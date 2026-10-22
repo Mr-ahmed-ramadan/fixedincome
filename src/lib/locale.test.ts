@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detectLocale } from "./locale";
-import { formatYield, groupByCurrency, type Quote } from "./yields";
+import { afterTax, formatYield, groupByCurrency, maturityValue, type Quote } from "./yields";
 
 describe("detectLocale", () => {
   it("prefers a saved choice", () => {
@@ -46,5 +46,16 @@ describe("yields", () => {
 
   it("formats yields with two decimals", () => {
     expect(formatYield(23.8)).toBe("23.80");
+  });
+});
+
+describe("after tax and maturity value", () => {
+  it("applies withholding tax only when set", () => {
+    expect(afterTax({ yieldPct: 25.67, taxRatePct: 20 })).toBe(20.54);
+    expect(afterTax({ yieldPct: 17.25, taxRatePct: 0 })).toBe(17.25);
+    expect(afterTax({ yieldPct: 20, taxRatePct: null })).toBeNull();
+  });
+  it("computes what a T-bill pays back", () => {
+    expect(Math.round(maturityValue(100_000, 25.67, 364))).toBe(125_600);
   });
 });

@@ -54,16 +54,24 @@ model PartnerRequest {
 model YieldQuote {
   id             String   @id @default(cuid())
   currency       String // EGP | USD | EUR
-  instrument     String // TBILL | BOND | SUKUK | EUROBOND | CORP
+  instrument     String // TBILL | BOND | SUKUK | EUROBOND | CORP, or CD | MMF (comparison only)
   labelEn        String // e.g. "3-month T-bill"
-  labelAr        String // e.g. "أذون خزانة ٣ شهور"
+  labelAr        String // e.g. "أذون خزانة 3 شهور"
   tenorMonths    Int
   yieldPct       Float // annual yield before taxes and fees, e.g. 24.15
   couponsPerYear Int // 0 = paid at maturity (discount instruments)
+  taxRatePct     Float? // withholding tax on the return, e.g. 20 for T-bills, 0 for bank CDs; null = not shown
+  compare        Boolean  @default(false) // include in the "how it compares" section
   sortOrder      Int      @default(0)
   active         Boolean  @default(true)
   asOf           DateTime
   updatedAt      DateTime @updatedAt
 
   @@index([currency, sortOrder])
+}
+
+/// Small key/value store for one-off bookkeeping (e.g. which seed version ran).
+model AppMeta {
+  key   String @id
+  value String
 }

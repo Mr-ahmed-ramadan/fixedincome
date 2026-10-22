@@ -83,10 +83,12 @@ p { text-wrap: pretty; }
   .ladder-rise rect:nth-of-type(3) { animation-delay: .24s; }
   .ladder-rise circle { transform-box: fill-box; transform-origin: center; animation: pop .5s .7s cubic-bezier(.3,1.6,.5,1) both; }
 
+  .screen-in { animation: screen-in .45s cubic-bezier(.2,.7,.2,1) both; }
   .float { animation: float 7s ease-in-out infinite; }
   .glow { animation: drift 16s ease-in-out infinite alternate; }
 }
 @keyframes rise { from { transform: scaleY(.1); } to { transform: scaleY(1); } }
 @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes screen-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes drift { from { transform: translate3d(-4%, -2%, 0) scale(1); } to { transform: translate3d(4%, 3%, 0) scale(1.08); } }

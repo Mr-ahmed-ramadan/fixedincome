@@ -114,7 +114,7 @@ async function Yields({ error, saved }: { error?: string; saved: boolean }) {
   const quotes = await prisma.yieldQuote.findMany({ orderBy: [{ currency: "asc" }, { sortOrder: "asc" }] });
   const today = new Date().toISOString().slice(0, 10);
   const row = (q?: (typeof quotes)[number]) => (
-    <form key={q?.id ?? "new"} action={saveQuote} className="grid grid-cols-2 items-end gap-2 rounded-2xl bg-card p-4 ring-1 ring-line/60 md:grid-cols-[5rem_7rem_1fr_1fr_5rem_5.5rem_5rem_4rem_8.5rem_auto]">
+    <form key={q?.id ?? "new"} action={saveQuote} className="grid grid-cols-2 items-end gap-2 rounded-2xl bg-card p-4 ring-1 ring-line/60 md:grid-cols-[5rem_6.5rem_1fr_1fr_4.5rem_5rem_4.5rem_4.5rem_4rem_8.5rem_auto]">
       {q && <input type="hidden" name="id" value={q.id} />}
       <Field label="Currency">
         <select name="currency" defaultValue={q?.currency ?? "EGP"} className={inputCls}>
@@ -131,10 +131,12 @@ async function Yields({ error, saved }: { error?: string; saved: boolean }) {
       <Field label="Months"><input name="tenorMonths" type="number" min={1} defaultValue={q?.tenorMonths} required className={inputCls} /></Field>
       <Field label="Yield %"><input name="yieldPct" type="number" step="0.01" defaultValue={q?.yieldPct} required className={inputCls} /></Field>
       <Field label="Coupons/yr"><input name="couponsPerYear" type="number" min={0} max={12} defaultValue={q?.couponsPerYear ?? 0} required className={inputCls} /></Field>
+      <Field label="Tax %"><input name="taxRatePct" type="number" step="0.5" min={0} max={100} defaultValue={q?.taxRatePct ?? ""} placeholder="—" className={inputCls} /></Field>
       <Field label="Order"><input name="sortOrder" type="number" min={0} defaultValue={q?.sortOrder ?? 0} className={inputCls} /></Field>
       <Field label="As of"><input name="asOf" type="date" defaultValue={q ? q.asOf.toISOString().slice(0, 10) : today} required className={inputCls} /></Field>
       <div className="col-span-2 flex items-center gap-3 md:col-span-1">
         <label className="flex items-center gap-1.5 text-xs"><input type="checkbox" name="active" defaultChecked={q?.active ?? true} /> Show</label>
+        <label className="flex items-center gap-1.5 text-xs"><input type="checkbox" name="compare" defaultChecked={q?.compare ?? false} /> Compare</label>
         <button className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-onprimary">{q ? "Save" : "Add"}</button>
         {q && <button formAction={deleteQuote} className="text-xs text-accent">Delete</button>}
       </div>
@@ -143,7 +145,7 @@ async function Yields({ error, saved }: { error?: string; saved: boolean }) {
   return (
     <div className="grid gap-3">
       <p className="text-sm text-muted">
-        Indicative annual yields, before taxes and fees. &ldquo;Coupons/yr&rdquo; 0 means paid at maturity (T-bills). The landing page updates as soon as you save. Unticked rows are hidden.
+        Indicative annual yields, before taxes and fees. &ldquo;Coupons/yr&rdquo; 0 means paid at maturity (T-bills). &ldquo;Tax %&rdquo; is the withholding tax used for the after-tax figure (20 for T-bills and bonds, 0 for bank CDs; leave empty if unknown). Type CD and MMF rows appear only in the comparison section; tick &ldquo;Compare&rdquo; to include any row there. The landing page updates as soon as you save. Unticked &ldquo;Show&rdquo; rows are hidden.
       </p>
       {error && <p className="text-sm text-accent">Couldn&apos;t save: check the &ldquo;{error}&rdquo; field.</p>}
       {saved && <p className="text-sm text-primary">Saved.</p>}
