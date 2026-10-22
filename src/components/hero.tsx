@@ -13,7 +13,6 @@ type Props = {
 
 export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
   const couponLabels = Object.fromEntries([1, 2, 4, 12].map((n) => [n, t.yields.coupons(n)]));
-  const firstCurrency = rates[0]?.currency as keyof Dictionary["yields"]["currencies"] | undefined;
 
   return (
     <section className="relative overflow-hidden">
@@ -79,10 +78,6 @@ export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
           <PhoneScreens
             locale={locale}
             brand={t.brand}
-            switchTo={t.nav.switchTo}
-            currencyName={firstCurrency ? t.yields.currencies[firstCurrency] : ""}
-            phoneTitle={t.hero.phoneTitle}
-            cta={t.hero.cta}
             atMaturity={t.yields.atMaturity}
             couponLabels={couponLabels}
             t={t.phone}
