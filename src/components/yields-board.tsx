@@ -13,8 +13,9 @@ type Labels = {
   bankEq: string;
 };
 
-// One row on wide screens, however many rates are published.
+// Wide screens: up to four cards in one row; six or nine fill rows of three.
 const LG_COLS: Record<number, string> = { 1: "lg:grid-cols-1", 2: "lg:grid-cols-2", 3: "lg:grid-cols-3", 4: "lg:grid-cols-4" };
+const lgCols = (n: number) => LG_COLS[n <= 4 ? n : n % 3 === 0 ? 3 : 4];
 
 export type BoardGroup = { currency: Currency; quotes: (Quote & { asOfLabel: string })[] };
 
@@ -46,7 +47,7 @@ export function YieldsBoard({ groups, labels, locale }: { groups: BoardGroup[]; 
         </div>
       )}
 
-      <div role="tabpanel" className={`grid grid-cols-2 gap-3 sm:gap-4 ${LG_COLS[Math.min(group.quotes.length, 4)]}`}>
+      <div role="tabpanel" className={`grid grid-cols-2 gap-3 sm:gap-4 ${lgCols(group.quotes.length)}`}>
         {group.quotes.map((q, i) => (
           <article
             key={q.id}

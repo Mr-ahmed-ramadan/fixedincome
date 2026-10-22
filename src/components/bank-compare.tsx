@@ -9,7 +9,7 @@ export type BankPair = {
   yieldPct: number;
   taxRatePct: number | null;
   asOf: string;
-  bankLabel: string; // e.g. "12-month bank deposit (CIB)"
+  bankLabel: string; // e.g. "Bank A · 12-month deposit"
   bankRatePct: number; // tax-free for Egyptian residents
   bankAsOf: string;
 };

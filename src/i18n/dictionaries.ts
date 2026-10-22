@@ -50,7 +50,7 @@ const en = {
       statement: "October statement",
       pdf: "PDF",
     },
-    notification: "Coupon received · USD 431.25",
+    notification: "Coupon received · USD 380.02",
   },
   compare: {
     eyebrow: "Side by side",
@@ -303,7 +303,7 @@ const ar: Dictionary = {
       statement: "كشف حساب أكتوبر",
       pdf: "PDF",
     },
-    notification: "تم استلام كوبون · 431.25 دولار",
+    notification: "تم استلام كوبون · 380.02 دولار",
   },
   compare: {
     eyebrow: "جنبًا إلى جنب",

@@ -368,7 +368,7 @@ function Home({ rates, locale, t, brand, atMaturity, couponLabels, active, live 
 
 /** Payments: countdown to the next payment and what's coming. */
 function Payments({ egpBills, locale, t, active }: SlideProps) {
-  // Sample holdings: EGP 100,000 in each T-bill, plus USD 10,000 of the 8.625% Eurobond 2030 (pays 4 Feb / 4 Aug).
+  // Sample holdings: EGP 100,000 in each T-bill, plus USD 10,000 of the 7.6003% Eurobond 2029 (pays 1 Mar / 1 Sep).
   const rows = [
     ...egpBills.slice(0, 2).map((q) => {
       const days = q.tenorMonths >= 12 ? 364 : Math.round((q.tenorMonths * 365) / 12);
@@ -380,7 +380,7 @@ function Payments({ egpBills, locale, t, active }: SlideProps) {
         amount: money(maturityValue(100_000, q.yieldPct, days), "EGP"),
       };
     }),
-    { key: "eb30", date: new Date("2027-02-04T12:00:00Z"), label: locale === "ar" ? "يوروبوند 2030" : "Eurobond 2030", kind: t.payments.coupon, amount: money(431.25, "USD", 2) },
+    { key: "eb29", date: new Date("2027-03-01T12:00:00Z"), label: locale === "ar" ? "يوروبوند 2029" : "Eurobond 2029", kind: t.payments.coupon, amount: money(380.02, "USD", 2) },
   ].sort((a, b) => a.date.getTime() - b.date.getTime());
 
   const [now, setNow] = useState<number | null>(null);
@@ -615,7 +615,7 @@ function Buy({ egpBills, locale, t, active, live }: SlideProps) {
 function Activity({ t, locale }: SlideProps) {
   const d = (iso: string) => shortDate(new Date(`${iso}T12:00:00Z`), locale);
   const items = [
-    { label: t.activity.couponIn, sub: locale === "ar" ? "يوروبوند 2030" : "Eurobond 2030", amount: "+ USD 431.25", up: true, date: d("2026-08-04") },
+    { label: t.activity.couponIn, sub: locale === "ar" ? "يوروبوند 2029" : "Eurobond 2029", amount: "+ USD 380.02", up: true, date: d("2026-09-01") },
     { label: t.activity.matured, sub: locale === "ar" ? "أذون خزانة 3 شهور" : "3-month T-bill", amount: "+ EGP 105,959", up: true, date: d("2026-07-14") },
     { label: t.activity.bought, sub: locale === "ar" ? "أذون خزانة 12 شهر" : "12-month T-bill", amount: "− EGP 50,000", up: false, date: d("2026-07-02") },
     { label: t.activity.couponIn, sub: locale === "ar" ? "سندات خزانة 3 سنوات" : "3-year T-bond", amount: "+ EGP 11,990", up: true, date: d("2026-06-20") },

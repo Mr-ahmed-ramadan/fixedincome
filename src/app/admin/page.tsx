@@ -136,7 +136,7 @@ async function Yields({ error, saved }: { error?: string; saved: boolean }) {
       <Field label="As of"><input name="asOf" type="date" defaultValue={q ? q.asOf.toISOString().slice(0, 10) : today} required className={inputCls} /></Field>
       <div className="col-span-full grid grid-cols-2 gap-2 border-t border-line pt-2 md:grid-cols-[6rem_1fr_1fr_8.5rem]">
         <Field label="Bank equiv. %"><input name="bankRatePct" type="number" step="0.01" min={0} max={100} defaultValue={q?.bankRatePct ?? ""} placeholder="—" className={inputCls} /></Field>
-        <Field label="Bank label (English)"><input name="bankLabelEn" defaultValue={q?.bankLabelEn ?? ""} placeholder="12-month bank deposit (CIB)" className={inputCls} /></Field>
+        <Field label="Bank label (English)"><input name="bankLabelEn" defaultValue={q?.bankLabelEn ?? ""} placeholder="Bank A · 12-month deposit" className={inputCls} /></Field>
         <Field label="Bank label (Arabic)"><input name="bankLabelAr" defaultValue={q?.bankLabelAr ?? ""} dir="rtl" className={inputCls} /></Field>
         <Field label="Bank rate as of"><input name="bankAsOf" type="date" defaultValue={q?.bankAsOf ? q.bankAsOf.toISOString().slice(0, 10) : ""} className={inputCls} /></Field>
       </div>
