@@ -1,63 +1,17 @@
 import type { Dictionary } from "@/i18n/dictionaries";
-import type { Locale } from "@/lib/locale";
-import { afterTax, type Quote } from "@/lib/yields";
+import { BankCompare, type BankPair } from "./bank-compare";
 import { SectionHead } from "./sections";
 
-/**
- * T-bills next to bank CDs and money market funds. Each bar is drawn to one
- * scale: the pale part is the headline yield, the solid part what's left after
- * withholding tax.
- */
-export function Compare({ t, locale, rows }: { t: Dictionary; locale: Locale; rows: Quote[] }) {
-  if (rows.length === 0) return null;
-  const max = Math.max(...rows.map((r) => r.yieldPct));
+/** Government yields next to the bank equivalent for the same maturity. */
+export function Compare({ t, pairs }: { t: Dictionary; pairs: BankPair[] }) {
+  if (pairs.length === 0) return null;
   const c = t.compare;
-
   return (
     <section id="compare" className="scroll-mt-16 py-20 sm:py-28">
       <div className="mx-auto grid max-w-site gap-10 px-4 sm:px-6">
         <SectionHead eyebrow={c.eyebrow} title={c.title} sub={c.sub} />
-        <div className="grid gap-3" data-reveal data-reveal-delay="1">
-          {rows.map((r) => {
-            const keep = afterTax(r);
-            const facts = c.facts[r.instrument] ?? c.facts.TBILL;
-            const highlight = r.instrument !== "CD" && r.instrument !== "MMF";
-            return (
-              <article
-                key={r.id}
-                className={`grid gap-4 rounded-3xl bg-card p-5 sm:grid-cols-[14rem_1fr_15rem] sm:items-center sm:p-6 ${highlight ? "ring-2 ring-primary/40" : "ring-1 ring-line/60"}`}
-              >
-                <div className="grid gap-1">
-                  <h3 className="text-lg font-semibold">{locale === "ar" ? r.labelAr : r.labelEn}</h3>
-                  <p className="text-sm text-muted">{facts.paid}</p>
-                  <p className="text-sm text-muted">{facts.rate}</p>
-                </div>
-
-                <div className="grid gap-1.5" aria-hidden>
-                  <div className="relative h-4 overflow-hidden rounded-full bg-ink/5" style={{ direction: "ltr" }}>
-                    <span className="absolute inset-y-0 left-0 rounded-full bg-primary/25" style={{ width: `${(r.yieldPct / max) * 100}%` }} />
-                    <span
-                      className={`absolute inset-y-0 left-0 rounded-full ${highlight ? "bg-primary" : "bg-muted/70"}`}
-                      style={{ width: `${((keep ?? r.yieldPct) / max) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                <dl className="grid grid-cols-2 gap-6">
-                  <div className="grid">
-                    <dt className="text-xs text-muted">{c.yieldLabel}</dt>
-                    <dd className="num text-2xl font-bold">{r.yieldPct.toFixed(2)}%</dd>
-                  </div>
-                  <div className="grid">
-                    <dt className="text-xs text-muted">{c.keepLabel}</dt>
-                    <dd className={`text-2xl font-bold ${highlight ? "text-primary" : ""}`}>
-                      {keep == null ? <span className="text-base font-medium text-muted">{c.taxVaries}</span> : <span className="num">{keep.toFixed(2)}%</span>}
-                    </dd>
-                  </div>
-                </dl>
-              </article>
-            );
-          })}
+        <div data-reveal data-reveal-delay="1">
+          <BankCompare pairs={pairs} labels={{ before: c.before, after: c.after, gov: c.gov, bank: c.bank, asOf: c.asOf }} />
         </div>
         <p className="max-w-3xl text-sm text-muted">{c.note}</p>
       </div>

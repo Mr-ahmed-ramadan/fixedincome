@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { pageLocale, otherLocalePath } from "@/lib/page-locale";
 import { CAL_URL, googleEnabled } from "@/lib/site";
-import { COMPARISON_ONLY, formatAsOf, groupByCurrency, type Quote } from "@/lib/yields";
+import { formatAsOf, groupByCurrency, type Quote } from "@/lib/yields";
 import { Compare, VsFunds } from "@/components/compare";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
@@ -26,11 +26,20 @@ async function loadQuotes(): Promise<Quote[]> {
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale, t } = await pageLocale(params);
   const all = await loadQuotes();
-  const board = all.filter((q) => !COMPARISON_ONLY.includes(q.instrument));
-  const comparison = all
-    .filter((q) => q.compare)
-    .sort((a, b) => Number(COMPARISON_ONLY.includes(a.instrument)) - Number(COMPARISON_ONLY.includes(b.instrument)) || a.sortOrder - b.sortOrder);
-  const groups = groupByCurrency(board).map((g) => ({
+  const pairs = all
+    .filter((q) => q.currency === "EGP" && q.bankRatePct != null)
+    .sort((a, b) => a.tenorMonths - b.tenorMonths)
+    .map((q) => ({
+      id: q.id,
+      label: locale === "ar" ? q.labelAr : q.labelEn,
+      yieldPct: q.yieldPct,
+      taxRatePct: q.taxRatePct ?? null,
+      asOf: formatAsOf(q.asOf, locale),
+      bankLabel: (locale === "ar" ? q.bankLabelAr : q.bankLabelEn) ?? "",
+      bankRatePct: q.bankRatePct!,
+      bankAsOf: formatAsOf(q.bankAsOf ?? q.asOf, locale),
+    }));
+  const groups = groupByCurrency(all).map((g) => ({
     currency: g.currency,
     quotes: g.quotes.map((q) => ({ ...q, asOf: new Date(q.asOf).toISOString(), asOfLabel: formatAsOf(q.asOf, locale) })),
   }));
@@ -57,6 +66,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                   couponLabels: Object.fromEntries([1, 2, 4, 12].map((n) => [n, t.yields.coupons(n)])),
                   asOf: t.yields.asOf,
                   empty: t.yields.empty,
+                  bankEq: t.yields.bankEq,
                 }}
               />
             </div>
@@ -64,7 +74,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </div>
         </section>
 
-        <Compare t={t} locale={locale} rows={comparison} />
+        <Compare t={t} pairs={pairs} />
         <VsFunds t={t} />
         <Products t={t} />
         <HowItWorks t={t} />

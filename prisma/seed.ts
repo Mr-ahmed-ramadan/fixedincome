@@ -4,14 +4,14 @@
 //
 // Sources (October 2026):
 // - EGP T-bills: CBE auction of 13 Oct 2026, weighted average accepted yields.
+// - EGP 3-year T-bond: CBE auction of 19 Oct 2026, 24.128% weighted average
+//   yield, semi-annual coupon.
 // - USD Eurobonds: bondterminal.com (2030) and MSA Securities (2040).
 // - USD T-bill: last published one-year result (Dec 2025); starts hidden.
-// - Bank CD: NBE Platinum / Banque Misr Al Qimma 3-year CD, 17.25% paid
-//   monthly from 22 Apr 2026 (Ahram Online). Interest on bank deposits is
-//   tax-free for Egyptian residents; T-bill/bond returns have 20% withheld.
-// - Money market funds: recent annualised returns of about 20% (Crédit
-//   Agricole Egypt MMF 3, 19.98% YTD annualised on 19 Oct 2026; category
-//   median ~20%). Varies daily.
+// - Bank equivalents (EnterpriseAM savings guide, 16 Aug 2026): CIB 12-month
+//   deposit up to 17%; NBE Platinum / Banque Misr Al Qimma 3-year CD 17.75%
+//   paid monthly. Bank interest is tax-free for Egyptian residents; T-bill and
+//   bond returns have 20% withheld.
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -28,28 +28,34 @@ type Row = {
   sortOrder: number;
   asOf: string;
   taxRatePct?: number | null;
-  compare?: boolean;
   active?: boolean;
+  bank?: { pct: number; en: string; ar: string; asOf: string };
 };
 
 const v1: Row[] = [
   { currency: "EGP", instrument: "TBILL", labelEn: "3-month T-bill", labelAr: "أذون خزانة 3 شهور", tenorMonths: 3, yieldPct: 23.83, couponsPerYear: 0, sortOrder: 10, asOf: "2026-10-13", taxRatePct: 20 },
   { currency: "EGP", instrument: "TBILL", labelEn: "6-month T-bill", labelAr: "أذون خزانة 6 شهور", tenorMonths: 6, yieldPct: 24.96, couponsPerYear: 0, sortOrder: 20, asOf: "2026-10-13", taxRatePct: 20 },
-  { currency: "EGP", instrument: "TBILL", labelEn: "12-month T-bill", labelAr: "أذون خزانة 12 شهر", tenorMonths: 12, yieldPct: 25.67, couponsPerYear: 0, sortOrder: 30, asOf: "2026-10-13", taxRatePct: 20, compare: true },
+  { currency: "EGP", instrument: "TBILL", labelEn: "12-month T-bill", labelAr: "أذون خزانة 12 شهر", tenorMonths: 12, yieldPct: 25.67, couponsPerYear: 0, sortOrder: 30, asOf: "2026-10-13", taxRatePct: 20 },
   { currency: "USD", instrument: "TBILL", labelEn: "12-month USD T-bill", labelAr: "أذون خزانة دولارية 12 شهر", tenorMonths: 12, yieldPct: 3.5, couponsPerYear: 0, sortOrder: 10, asOf: "2025-12-29", taxRatePct: 20, active: false },
   { currency: "USD", instrument: "EUROBOND", labelEn: "Eurobond 2030", labelAr: "يوروبوند 2030", tenorMonths: 40, yieldPct: 7.38, couponsPerYear: 2, sortOrder: 20, asOf: "2026-10-14" },
   { currency: "USD", instrument: "EUROBOND", labelEn: "Eurobond 2040", labelAr: "يوروبوند 2040", tenorMonths: 162, yieldPct: 8.61, couponsPerYear: 2, sortOrder: 30, asOf: "2026-10-07" },
 ];
 
-const v2Comparison: Row[] = [
-  { currency: "EGP", instrument: "CD", labelEn: "3-year bank CD", labelAr: "شهادة بنكية 3 سنوات", tenorMonths: 36, yieldPct: 17.25, couponsPerYear: 12, sortOrder: 100, asOf: "2026-04-22", taxRatePct: 0, compare: true },
-  { currency: "EGP", instrument: "MMF", labelEn: "Money market fund", labelAr: "صندوق أسواق النقد", tenorMonths: 1, yieldPct: 20.0, couponsPerYear: 0, sortOrder: 110, asOf: "2026-10-19", taxRatePct: null, compare: true },
+const v3: Row[] = [
+  {
+    currency: "EGP", instrument: "BOND", labelEn: "3-year T-bond", labelAr: "سندات خزانة 3 سنوات", tenorMonths: 36, yieldPct: 24.13, couponsPerYear: 2, sortOrder: 40, asOf: "2026-10-19", taxRatePct: 20,
+    bank: { pct: 17.75, en: "3-year bank CD (NBE, Banque Misr)", ar: "شهادة بنكية 3 سنوات (الأهلي، بنك مصر)", asOf: "2026-08-16" },
+  },
 ];
+const bank12m = { pct: 17, en: "12-month bank deposit (CIB)", ar: "وديعة بنكية 12 شهر (CIB)", asOf: "2026-08-16" };
+
+const day = (d: string) => new Date(`${d}T12:00:00Z`);
+const bankData = (b: NonNullable<Row["bank"]>) => ({ bankRatePct: b.pct, bankLabelEn: b.en, bankLabelAr: b.ar, bankAsOf: day(b.asOf) });
 
 async function insert(rows: Row[]) {
-  for (const r of rows) {
+  for (const { bank, ...r } of rows) {
     await prisma.yieldQuote.create({
-      data: { ...r, active: r.active ?? true, compare: r.compare ?? false, taxRatePct: r.taxRatePct ?? null, asOf: new Date(`${r.asOf}T12:00:00Z`) },
+      data: { ...r, active: r.active ?? true, taxRatePct: r.taxRatePct ?? null, asOf: day(r.asOf), ...(bank ? bankData(bank) : {}) },
     });
   }
 }
@@ -65,13 +71,16 @@ async function main() {
     version = 1;
   }
   if (version < 2) {
-    if (start >= 1) {
-      // Existing databases: add tax rates and the comparison flag to the v1 rows.
-      await prisma.yieldQuote.updateMany({ where: { instrument: { in: ["TBILL", "BOND"] }, taxRatePct: null }, data: { taxRatePct: 20 } });
-      await prisma.yieldQuote.updateMany({ where: { currency: "EGP", instrument: "TBILL", tenorMonths: 12 }, data: { compare: true } });
-    }
-    await insert(v2Comparison);
+    // v2 added withholding tax rates (fresh databases already get them from v1).
+    await prisma.yieldQuote.updateMany({ where: { instrument: { in: ["TBILL", "BOND"] }, taxRatePct: null }, data: { taxRatePct: 20 } });
     version = 2;
+  }
+  if (version < 3) {
+    // v3: bank deposits/CDs sit next to each maturity instead of as separate rows.
+    await prisma.yieldQuote.deleteMany({ where: { instrument: { in: ["CD", "MMF"] } } });
+    await prisma.yieldQuote.updateMany({ where: { currency: "EGP", instrument: "TBILL", tenorMonths: 12, bankRatePct: null }, data: bankData(bank12m) });
+    await insert(v3);
+    version = 3;
   }
 
   await prisma.appMeta.upsert({ where: { key: VERSION_KEY }, create: { key: VERSION_KEY, value: String(version) }, update: { value: String(version) } });

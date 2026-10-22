@@ -134,9 +134,14 @@ async function Yields({ error, saved }: { error?: string; saved: boolean }) {
       <Field label="Tax %"><input name="taxRatePct" type="number" step="0.5" min={0} max={100} defaultValue={q?.taxRatePct ?? ""} placeholder="—" className={inputCls} /></Field>
       <Field label="Order"><input name="sortOrder" type="number" min={0} defaultValue={q?.sortOrder ?? 0} className={inputCls} /></Field>
       <Field label="As of"><input name="asOf" type="date" defaultValue={q ? q.asOf.toISOString().slice(0, 10) : today} required className={inputCls} /></Field>
+      <div className="col-span-full grid grid-cols-2 gap-2 border-t border-line pt-2 md:grid-cols-[6rem_1fr_1fr_8.5rem]">
+        <Field label="Bank equiv. %"><input name="bankRatePct" type="number" step="0.01" min={0} max={100} defaultValue={q?.bankRatePct ?? ""} placeholder="—" className={inputCls} /></Field>
+        <Field label="Bank label (English)"><input name="bankLabelEn" defaultValue={q?.bankLabelEn ?? ""} placeholder="12-month bank deposit (CIB)" className={inputCls} /></Field>
+        <Field label="Bank label (Arabic)"><input name="bankLabelAr" defaultValue={q?.bankLabelAr ?? ""} dir="rtl" className={inputCls} /></Field>
+        <Field label="Bank rate as of"><input name="bankAsOf" type="date" defaultValue={q?.bankAsOf ? q.bankAsOf.toISOString().slice(0, 10) : ""} className={inputCls} /></Field>
+      </div>
       <div className="col-span-2 flex items-center gap-3 md:col-span-1">
         <label className="flex items-center gap-1.5 text-xs"><input type="checkbox" name="active" defaultChecked={q?.active ?? true} /> Show</label>
-        <label className="flex items-center gap-1.5 text-xs"><input type="checkbox" name="compare" defaultChecked={q?.compare ?? false} /> Compare</label>
         <button className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-onprimary">{q ? "Save" : "Add"}</button>
         {q && <button formAction={deleteQuote} className="text-xs text-accent">Delete</button>}
       </div>
@@ -145,7 +150,7 @@ async function Yields({ error, saved }: { error?: string; saved: boolean }) {
   return (
     <div className="grid gap-3">
       <p className="text-sm text-muted">
-        Indicative annual yields, before taxes and fees. &ldquo;Coupons/yr&rdquo; 0 means paid at maturity (T-bills). &ldquo;Tax %&rdquo; is the withholding tax used for the after-tax figure (20 for T-bills and bonds, 0 for bank CDs; leave empty if unknown). Type CD and MMF rows appear only in the comparison section; tick &ldquo;Compare&rdquo; to include any row there. The landing page updates as soon as you save. Unticked &ldquo;Show&rdquo; rows are hidden.
+        Indicative annual yields, before taxes and fees. &ldquo;Coupons/yr&rdquo; 0 means paid at maturity (T-bills). &ldquo;Tax %&rdquo; is the withholding tax used for the after-tax view (20 for T-bills and bonds). Fill in &ldquo;Bank equiv.&rdquo; with the rate of a comparable bank deposit or CD for the same maturity (bank interest is tax-free) and the row appears in the &ldquo;side by side with bank deposits&rdquo; section. The landing page updates as soon as you save. Unticked &ldquo;Show&rdquo; rows are hidden.
       </p>
       {error && <p className="text-sm text-accent">Couldn&apos;t save: check the &ldquo;{error}&rdquo; field.</p>}
       {saved && <p className="text-sm text-primary">Saved.</p>}

@@ -10,6 +10,7 @@ type Labels = {
   couponLabels: Record<number, string>;
   asOf: string;
   empty: string;
+  bankEq: string;
 };
 
 // One row on wide screens, however many rates are published.
@@ -62,6 +63,11 @@ export function YieldsBoard({ groups, labels, locale }: { groups: BoardGroup[]; 
               <span className="font-semibold text-primary">
                 {q.couponsPerYear === 0 ? labels.atMaturity : labels.couponLabels[q.couponsPerYear]}
               </span>
+              {q.bankRatePct != null && (
+                <span className="text-muted">
+                  {labels.bankEq} <span className="num font-semibold text-ink/70">{q.bankRatePct.toFixed(2)}%</span>
+                </span>
+              )}
               <span className="text-muted">
                 {labels.asOf} {q.asOfLabel}
               </span>

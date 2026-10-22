@@ -45,7 +45,7 @@ export const partnerSchema = z.object({
 
 export const quoteSchema = z.object({
   currency: z.enum(["EGP", "USD", "EUR"]),
-  instrument: z.enum(["TBILL", "BOND", "SUKUK", "EUROBOND", "CORP", "CD", "MMF"]),
+  instrument: z.enum(["TBILL", "BOND", "SUKUK", "EUROBOND", "CORP"]),
   labelEn: z.string().trim().min(1).max(80),
   labelAr: z.string().trim().min(1).max(80),
   tenorMonths: z.coerce.number().int().min(1).max(600),
@@ -54,7 +54,10 @@ export const quoteSchema = z.object({
   taxRatePct: z.preprocess((v) => (v === "" || v == null ? null : v), z.coerce.number().min(0).max(100).nullable()),
   sortOrder: z.coerce.number().int().min(0).max(999),
   active: z.preprocess((v) => v === "on" || v === "true" || v === true, z.boolean()),
-  compare: z.preprocess((v) => v === "on" || v === "true" || v === true, z.boolean()),
+  bankRatePct: z.preprocess((v) => (v === "" || v == null ? null : v), z.coerce.number().min(0).max(100).nullable()),
+  bankLabelEn: z.string().trim().max(80).optional().transform((v) => v || null),
+  bankLabelAr: z.string().trim().max(80).optional().transform((v) => v || null),
+  bankAsOf: z.preprocess((v) => (v === "" || v == null ? null : v), z.coerce.date().nullable()),
   asOf: z.coerce.date(),
 });
 

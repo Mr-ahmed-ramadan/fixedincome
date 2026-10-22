@@ -54,14 +54,19 @@ model PartnerRequest {
 model YieldQuote {
   id             String   @id @default(cuid())
   currency       String // EGP | USD | EUR
-  instrument     String // TBILL | BOND | SUKUK | EUROBOND | CORP, or CD | MMF (comparison only)
+  instrument     String // TBILL | BOND | SUKUK | EUROBOND | CORP
   labelEn        String // e.g. "3-month T-bill"
   labelAr        String // e.g. "أذون خزانة 3 شهور"
   tenorMonths    Int
   yieldPct       Float // annual yield before taxes and fees, e.g. 24.15
   couponsPerYear Int // 0 = paid at maturity (discount instruments)
-  taxRatePct     Float? // withholding tax on the return, e.g. 20 for T-bills, 0 for bank CDs; null = not shown
-  compare        Boolean  @default(false) // include in the "how it compares" section
+  taxRatePct     Float? // withholding tax on the return, e.g. 20 for T-bills and bonds; null = unknown
+  // Optional bank equivalent for the same maturity (deposit or CD; tax-free for
+  // Egyptian residents). Rows that have one appear in "side by side with banks".
+  bankRatePct    Float?
+  bankLabelEn    String? // e.g. "12-month bank deposit (CIB)"
+  bankLabelAr    String?
+  bankAsOf       DateTime?
   sortOrder      Int      @default(0)
   active         Boolean  @default(true)
   asOf           DateTime

@@ -1,11 +1,8 @@
 export const CURRENCIES = ["EGP", "USD", "EUR"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
-export const INSTRUMENTS = ["TBILL", "BOND", "SUKUK", "EUROBOND", "CORP", "CD", "MMF"] as const;
+export const INSTRUMENTS = ["TBILL", "BOND", "SUKUK", "EUROBOND", "CORP"] as const;
 export type Instrument = (typeof INSTRUMENTS)[number];
-
-/** Bank CDs and money market funds appear only in the comparison, never on the yields board. */
-export const COMPARISON_ONLY: readonly string[] = ["CD", "MMF"];
 
 export type Quote = {
   id: string;
@@ -17,7 +14,10 @@ export type Quote = {
   yieldPct: number;
   couponsPerYear: number;
   taxRatePct?: number | null;
-  compare?: boolean;
+  bankRatePct?: number | null;
+  bankLabelEn?: string | null;
+  bankLabelAr?: string | null;
+  bankAsOf?: Date | string | null;
   sortOrder: number;
   asOf: Date | string;
 };

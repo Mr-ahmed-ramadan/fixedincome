@@ -59,3 +59,13 @@ describe("after tax and maturity value", () => {
     expect(Math.round(maturityValue(100_000, 25.67, 364))).toBe(125_600);
   });
 });
+
+describe("Arabic coupon counts", () => {
+  it("uses the right plural for each number", async () => {
+    const { getDictionary } = await import("@/i18n/dictionaries");
+    const c = getDictionary("ar").yields.coupons;
+    expect(c(2)).toBe("كوبونان في السنة");
+    expect(c(4)).toBe("4 كوبونات في السنة");
+    expect(c(12)).toBe("12 كوبونًا في السنة");
+  });
+});
