@@ -1,0 +1,230 @@
+import Link from "next/link";
+import { isAdmin } from "@/lib/admin";
+import { prisma } from "@/lib/db";
+import { CURRENCIES, INSTRUMENTS } from "@/lib/yields";
+import { Wordmark } from "@/components/logo";
+import { deleteQuote, login, logout, saveQuote } from "./actions";
+
+export const dynamic = "force-dynamic";
+
+type Search = Promise<{ tab?: string; error?: string; saved?: string }>;
+
+export default async function AdminPage({ searchParams }: { searchParams: Search }) {
+  const sp = await searchParams;
+  if (!(await isAdmin())) return <Login failed={Boolean(sp.error)} configured={Boolean(process.env.ADMIN_PASSWORD)} />;
+
+  const tab = sp.tab ?? "overview";
+  const tabs = [
+    ["overview", "Overview"],
+    ["yields", "Yields"],
+    ["waitlist", "Waitlist"],
+    ["partners", "Partners"],
+  ] as const;
+
+  return (
+    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8">
+      <header className="flex flex-wrap items-center gap-4">
+        <Wordmark name="AGYAL admin" />
+        <nav className="flex flex-wrap gap-1 rounded-full bg-ink/5 p-1 text-sm">
+          {tabs.map(([key, label]) => (
+            <Link key={key} href={`/admin?tab=${key}`} className={`rounded-full px-4 py-1.5 ${tab === key ? "bg-card font-semibold shadow-sm" : "text-muted"}`}>
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <form action={logout} className="ms-auto">
+          <button className="text-sm text-muted hover:text-ink">Sign out</button>
+        </form>
+      </header>
+      {tab === "yields" && <Yields error={sp.error} saved={Boolean(sp.saved)} />}
+      {tab === "waitlist" && <Waitlist />}
+      {tab === "partners" && <Partners />}
+      {tab === "overview" && <Overview />}
+    </div>
+  );
+}
+
+function Login({ failed, configured }: { failed: boolean; configured: boolean }) {
+  return (
+    <main className="grid min-h-screen place-items-center px-4">
+      <form action={login} className="grid w-full max-w-sm gap-4 rounded-3xl bg-card p-8 ring-1 ring-line">
+        <Wordmark name="AGYAL admin" />
+        {!configured && <p className="text-sm text-accent">Set ADMIN_PASSWORD in the environment to enable the admin area.</p>}
+        <label htmlFor="password" className="text-sm font-medium">Password</label>
+        <input id="password" name="password" type="password" autoComplete="current-password" required className="field" />
+        {failed && <p className="text-sm text-accent">That password didn&apos;t match.</p>}
+        <button className="btn-primary">Sign in</button>
+      </form>
+    </main>
+  );
+}
+
+function Card({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+  return (
+    <div className="grid gap-1 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+      <span className="text-sm text-muted">{label}</span>
+      <span className="num text-3xl font-bold">{value}</span>
+      {hint && <span className="text-xs text-muted">{hint}</span>}
+    </div>
+  );
+}
+
+async function Overview() {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+  const [total, confirmed, lastWeek, partners, referred, sources] = await Promise.all([
+    prisma.waitlistUser.count(),
+    prisma.waitlistUser.count({ where: { emailVerifiedAt: { not: null } } }),
+    prisma.waitlistUser.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.partnerRequest.count(),
+    prisma.waitlistUser.count({ where: { referredById: { not: null } } }),
+    prisma.waitlistUser.groupBy({ by: ["utmSource"], _count: { _all: true }, orderBy: { _count: { utmSource: "desc" } }, take: 8 }),
+  ]);
+  return (
+    <div className="grid gap-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+        <Card label="Waitlist" value={total} />
+        <Card label="Confirmed email" value={confirmed} hint={total ? `${Math.round((confirmed / total) * 100)}% of sign-ups` : undefined} />
+        <Card label="Joined this week" value={lastWeek} />
+        <Card label="Came via a friend" value={referred} />
+        <Card label="Partner requests" value={partners} />
+      </div>
+      <section className="grid gap-3 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+        <h2 className="font-semibold">Where sign-ups come from (utm_source)</h2>
+        <table className="text-sm">
+          <tbody>
+            {sources.map((s) => (
+              <tr key={s.utmSource ?? "none"} className="border-t border-line">
+                <td className="py-2">{s.utmSource ?? "(direct / untagged)"}</td>
+                <td className="num py-2 text-end font-semibold">{s._count._all}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="text-xs text-muted">
+          Tag each post&apos;s link, e.g. agyal.net/ar?utm_source=instagram&amp;utm_campaign=launch, to see which posts bring people in.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+const inputCls = "w-full rounded-xl border border-line bg-paper px-2.5 py-2 text-sm";
+
+async function Yields({ error, saved }: { error?: string; saved: boolean }) {
+  const quotes = await prisma.yieldQuote.findMany({ orderBy: [{ currency: "asc" }, { sortOrder: "asc" }] });
+  const today = new Date().toISOString().slice(0, 10);
+  const row = (q?: (typeof quotes)[number]) => (
+    <form key={q?.id ?? "new"} action={saveQuote} className="grid grid-cols-2 items-end gap-2 rounded-2xl bg-card p-4 ring-1 ring-line/60 md:grid-cols-[5rem_7rem_1fr_1fr_5rem_5.5rem_5rem_4rem_8.5rem_auto]">
+      {q && <input type="hidden" name="id" value={q.id} />}
+      <Field label="Currency">
+        <select name="currency" defaultValue={q?.currency ?? "EGP"} className={inputCls}>
+          {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
+        </select>
+      </Field>
+      <Field label="Type">
+        <select name="instrument" defaultValue={q?.instrument ?? "TBILL"} className={inputCls}>
+          {INSTRUMENTS.map((c) => <option key={c}>{c}</option>)}
+        </select>
+      </Field>
+      <Field label="Label (English)"><input name="labelEn" defaultValue={q?.labelEn} required className={inputCls} /></Field>
+      <Field label="Label (Arabic)"><input name="labelAr" defaultValue={q?.labelAr} required dir="rtl" className={inputCls} /></Field>
+      <Field label="Months"><input name="tenorMonths" type="number" min={1} defaultValue={q?.tenorMonths} required className={inputCls} /></Field>
+      <Field label="Yield %"><input name="yieldPct" type="number" step="0.01" defaultValue={q?.yieldPct} required className={inputCls} /></Field>
+      <Field label="Coupons/yr"><input name="couponsPerYear" type="number" min={0} max={12} defaultValue={q?.couponsPerYear ?? 0} required className={inputCls} /></Field>
+      <Field label="Order"><input name="sortOrder" type="number" min={0} defaultValue={q?.sortOrder ?? 0} className={inputCls} /></Field>
+      <Field label="As of"><input name="asOf" type="date" defaultValue={q ? q.asOf.toISOString().slice(0, 10) : today} required className={inputCls} /></Field>
+      <div className="col-span-2 flex items-center gap-3 md:col-span-1">
+        <label className="flex items-center gap-1.5 text-xs"><input type="checkbox" name="active" defaultChecked={q?.active ?? true} /> Show</label>
+        <button className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-onprimary">{q ? "Save" : "Add"}</button>
+        {q && <button formAction={deleteQuote} className="text-xs text-accent">Delete</button>}
+      </div>
+    </form>
+  );
+  return (
+    <div className="grid gap-3">
+      <p className="text-sm text-muted">
+        Indicative annual yields, before taxes and fees. &ldquo;Coupons/yr&rdquo; 0 means paid at maturity (T-bills). The landing page updates as soon as you save. Unticked rows are hidden.
+      </p>
+      {error && <p className="text-sm text-accent">Couldn&apos;t save: check the &ldquo;{error}&rdquo; field.</p>}
+      {saved && <p className="text-sm text-primary">Saved.</p>}
+      {quotes.map((q) => row(q))}
+      <h3 className="mt-4 font-semibold">Add a rate</h3>
+      {row()}
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="grid gap-1 text-xs text-muted">
+      {label}
+      {children}
+    </label>
+  );
+}
+
+function fmt(d: Date | null) {
+  return d ? d.toISOString().slice(0, 16).replace("T", " ") : "";
+}
+
+async function Waitlist() {
+  const users = await prisma.waitlistUser.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 300,
+    include: { _count: { select: { referrals: true } } },
+  });
+  return (
+    <section className="grid gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold">Latest {users.length} sign-ups</h2>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- CSV download from a route handler */}
+        <a href="/admin/export?type=waitlist" className="btn-ghost px-4 py-2 text-sm">Download CSV</a>
+      </div>
+      <div className="overflow-x-auto rounded-3xl bg-card ring-1 ring-line/60">
+        <table className="w-full min-w-[56rem] text-sm">
+          <thead className="text-start text-xs text-muted">
+            <tr>{["Joined", "Name", "Email", "Mobile", "Lang", "Via", "Confirmed", "Friends", "Source"].map((h) => <th key={h} className="px-3 py-2 text-start font-medium">{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {users.map((u) => (
+              <tr key={u.id} className="border-t border-line">
+                <td className="num whitespace-nowrap px-3 py-2">{fmt(u.createdAt)}</td>
+                <td className="px-3 py-2">{u.name}</td>
+                <td className="px-3 py-2">{u.email}</td>
+                <td className="num px-3 py-2">{u.phone}</td>
+                <td className="px-3 py-2">{u.locale}</td>
+                <td className="px-3 py-2">{u.provider}</td>
+                <td className="px-3 py-2">{u.emailVerifiedAt ? "Yes" : "No"}</td>
+                <td className="num px-3 py-2">{u._count.referrals}</td>
+                <td className="px-3 py-2">{[u.utmSource, u.utmCampaign].filter(Boolean).join(" / ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+async function Partners() {
+  const rows = await prisma.partnerRequest.findMany({ orderBy: { createdAt: "desc" }, take: 300 });
+  return (
+    <section className="grid gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold">{rows.length} partner requests</h2>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- CSV download from a route handler */}
+        <a href="/admin/export?type=partners" className="btn-ghost px-4 py-2 text-sm">Download CSV</a>
+      </div>
+      {rows.map((r) => (
+        <article key={r.id} className="grid gap-1 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="font-semibold">{r.institution} <span className="text-sm font-normal text-muted">· {r.type}</span></h3>
+            <span className="num text-xs text-muted">{fmt(r.createdAt)}</span>
+          </div>
+          <p className="text-sm">{r.name}{r.role ? `, ${r.role}` : ""} · <span className="select-all">{r.email}</span>{r.phone ? ` · ${r.phone}` : ""}</p>
+          {r.message && <p className="whitespace-pre-wrap text-sm text-muted">{r.message}</p>}
+        </article>
+      ))}
+    </section>
+  );
+}

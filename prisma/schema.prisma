@@ -1,0 +1,69 @@
+// AGYAL — waitlist, partner requests and indicative yields.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A person who joined the waitlist, by email form or Google.
+model WaitlistUser {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  phone           String? // E.164, e.g. +201001234567 (Google sign-ups add it after)
+  locale          String    @default("ar") // ar | en
+  provider        String    @default("email") // email | google
+  emailVerifiedAt DateTime?
+  welcomeSentAt   DateTime?
+  referralCode    String    @unique
+  referredById    String?
+  referredBy      WaitlistUser?  @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals       WaitlistUser[] @relation("Referrals")
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmContent      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([referredById])
+  @@index([createdAt])
+}
+
+/// A broker, bank or other institution asking for an introductory call.
+model PartnerRequest {
+  id          String   @id @default(cuid())
+  institution String
+  type        String // BROKER | BANK | ASSET_MANAGER | OTHER
+  name        String
+  role        String?
+  email       String
+  phone       String?
+  message     String?
+  locale      String   @default("en")
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// One indicative yield shown on the landing page. Edited from /admin.
+model YieldQuote {
+  id             String   @id @default(cuid())
+  currency       String // EGP | USD | EUR
+  instrument     String // TBILL | BOND | SUKUK | EUROBOND | CORP
+  labelEn        String // e.g. "3-month T-bill"
+  labelAr        String // e.g. "أذون خزانة ٣ شهور"
+  tenorMonths    Int
+  yieldPct       Float // annual yield before taxes and fees, e.g. 24.15
+  couponsPerYear Int // 0 = paid at maturity (discount instruments)
+  sortOrder      Int      @default(0)
+  active         Boolean  @default(true)
+  asOf           DateTime
+  updatedAt      DateTime @updatedAt
+
+  @@index([currency, sortOrder])
+}

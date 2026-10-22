@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* AGYAL brand: Lapis & Carnelian. RGB triplets so Tailwind can apply opacity. */
+:root {
+  --primary: 29 71 163; /* #1D47A3 lapis */
+  --accent: 208 100 58; /* #D0643A carnelian */
+  --ink: 15 22 48; /* #0F1630 */
+  --paper: 244 245 250; /* #F4F5FA */
+  --card: 255 255 255;
+  --muted: 93 100 120; /* #5D6478 */
+  --line: 226 229 238;
+  --onprimary: 255 255 255;
+
+  --latin: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Segoe UI", Roboto, Arial;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: 123 159 240; /* #7B9FF0 */
+    --accent: 239 138 95; /* #EF8A5F */
+    --ink: 238 241 251;
+    --paper: 11 15 29; /* #0B0F1D */
+    --card: 21 27 49; /* #151B31 */
+    --muted: 152 160 187;
+    --line: 40 47 72;
+    --onprimary: 8 13 31;
+    color-scheme: dark;
+  }
+}
+
+/* English: Apple system font first. Arabic: IBM Plex Sans Arabic first. */
+html[lang="en"] { --font-stack: var(--latin), var(--font-arabic), sans-serif; }
+html[lang="ar"] { --font-stack: var(--font-arabic), var(--latin), sans-serif; }
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  @apply bg-paper text-ink antialiased;
+  font-family: var(--font-stack);
+}
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
+:focus-visible { outline: 2px solid rgb(var(--primary)); outline-offset: 2px; border-radius: 6px; }
+
+/* Figures stay left-to-right inside Arabic text and line up in columns. */
+.num { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+
+.glass {
+  background: rgb(var(--paper) / 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Component classes live in the components layer so utilities (w-auto, px-4…) can override them. */
+@layer components {
+  .field {
+    @apply w-full rounded-2xl border border-line bg-card px-4 py-3.5 text-base text-ink placeholder:text-muted/70 transition-colors;
+    @apply focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-semibold transition;
+    @apply active:scale-[0.98] disabled:opacity-60;
+  }
+  .btn-primary { @apply btn bg-primary text-onprimary hover:brightness-110; }
+  .btn-ghost { @apply btn border border-line bg-card text-ink hover:border-ink/30; }
+  .eyebrow { @apply text-sm font-semibold uppercase tracking-[0.08em] text-accent; }
+  html[lang="ar"] .eyebrow { @apply normal-case tracking-normal; }
+}
+
+/* ---------- motion (all of it is skipped for reduced-motion users) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] { transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1); }
+  .js [data-reveal]:not(.in) { opacity: 0; transform: translateY(24px); }
+  .js [data-reveal-delay="1"] { transition-delay: .08s; }
+  .js [data-reveal-delay="2"] { transition-delay: .16s; }
+  .js [data-reveal-delay="3"] { transition-delay: .24s; }
+  .js [data-reveal-delay="4"] { transition-delay: .32s; }
+
+  .ladder-rise rect { transform-box: fill-box; transform-origin: bottom; animation: rise 1s cubic-bezier(.3,.8,.2,1) both; }
+  .ladder-rise rect:nth-of-type(2) { animation-delay: .12s; }
+  .ladder-rise rect:nth-of-type(3) { animation-delay: .24s; }
+  .ladder-rise circle { transform-box: fill-box; transform-origin: center; animation: pop .5s .7s cubic-bezier(.3,1.6,.5,1) both; }
+
+  .float { animation: float 7s ease-in-out infinite; }
+  .glow { animation: drift 16s ease-in-out infinite alternate; }
+}
+@keyframes rise { from { transform: scaleY(.1); } to { transform: scaleY(1); } }
+@keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes drift { from { transform: translate3d(-4%, -2%, 0) scale(1); } to { transform: translate3d(4%, 3%, 0) scale(1.08); } }
