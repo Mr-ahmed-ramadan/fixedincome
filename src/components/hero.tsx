@@ -50,7 +50,7 @@ export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {highlights.map((q) => (
-                  <a key={q.id} href={`/${locale}#yields`} className="grid gap-0.5 rounded-2xl bg-card p-3 ring-1 ring-line/70 transition hover:ring-primary/40">
+                  <a key={q.id} href={`/${locale}/securities/${q.id}`} className="grid gap-0.5 rounded-2xl bg-card p-3 ring-1 ring-line/70 transition hover:ring-primary/40">
                     <span className="flex items-center justify-between gap-1 text-[11px] text-muted">
                       <span className="truncate">{locale === "ar" ? q.labelAr : q.labelEn}</span>
                       <span className="shrink-0 rounded bg-ink/5 px-1 text-[10px] font-semibold">{q.currency}</span>

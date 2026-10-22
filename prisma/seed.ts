@@ -7,7 +7,9 @@
 // - EGP 3-year T-bond: CBE auction of 19 Oct 2026, 24.128% weighted average
 //   yield, semi-annual coupon.
 // - USD/EUR Eurobonds (v4): ask-side yields at the last close before 22 Oct
-//   2026, from the owner's broker screen ("best yield per tenor").
+//   2026, from the owner's broker screen ("best yield per tenor"), which also
+//   gives each bond's coupon, maturity, ISIN and minimum order (v5).
+// - T-bill maturities: auction date plus 91/182/364 days.
 // - USD T-bill: last published one-year result (Dec 2025); starts hidden.
 // - Bank equivalents (EnterpriseAM savings guide, 16 Aug 2026): CIB 12-month
 //   deposit up to 17%; NBE Platinum / Banque Misr Al Qimma 3-year CD 17.75%
@@ -72,6 +74,21 @@ const v4Eurobonds: Row[] = [
 const day = (d: string) => new Date(`${d}T12:00:00Z`);
 const bankData = (b: NonNullable<Row["bank"]>) => ({ bankRatePct: b.pct, bankLabelEn: b.en, bankLabelAr: b.ar, bankAsOf: day(b.asOf) });
 
+// v5: details for each security's own page, matched by English label.
+const v5Details: Record<string, { coupon?: number; maturity: string; isin?: string; min?: number }> = {
+  "3-month T-bill": { maturity: "2027-01-12" },
+  "6-month T-bill": { maturity: "2027-04-13" },
+  "12-month T-bill": { maturity: "2027-10-12" },
+  "3-year T-bond": { coupon: 23.981, maturity: "2029-10-06" },
+  "Eurobond 2027 · 5.8%": { coupon: 5.8, maturity: "2027-09-30", isin: "XS2391394348", min: 200_000 },
+  "Eurobond 2029 · 7.6003%": { coupon: 7.6003, maturity: "2029-03-01", isin: "US03846JW719", min: 200_000 },
+  "Eurobond 2031 · 5.875%": { coupon: 5.875, maturity: "2031-02-16", isin: "XS2297226545", min: 200_000 },
+  "Eurobond 2034 · 7.625%": { coupon: 7.625, maturity: "2034-05-20", isin: "US03846JAJ97", min: 200_000 },
+  "Eurobond 2040 · 6.875%": { coupon: 6.875, maturity: "2040-04-30", isin: "XS0505478684", min: 100_000 },
+  "Eurobond 2049 · 8.7002%": { coupon: 8.7002, maturity: "2049-03-01", isin: "XS1953057491", min: 200_000 },
+  "Eurobond 2031 · 6.375%": { coupon: 6.375, maturity: "2031-04-11", isin: "XS1980255936", min: 100_000 },
+};
+
 async function insert(rows: Row[]) {
   for (const { bank, ...r } of rows) {
     await prisma.yieldQuote.create({
@@ -109,6 +126,15 @@ async function main() {
     await prisma.yieldQuote.updateMany({ where: { bankLabelEn: "12-month bank deposit (CIB)" }, data: { bankLabelEn: BANK_A.en, bankLabelAr: BANK_A.ar } });
     await prisma.yieldQuote.updateMany({ where: { bankLabelEn: "3-year bank CD (NBE, Banque Misr)" }, data: { bankLabelEn: BANK_B.en, bankLabelAr: BANK_B.ar } });
     version = 4;
+  }
+  if (version < 5) {
+    for (const [labelEn, d] of Object.entries(v5Details)) {
+      await prisma.yieldQuote.updateMany({
+        where: { labelEn, maturityDate: null },
+        data: { couponRatePct: d.coupon ?? null, maturityDate: day(d.maturity), isin: d.isin ?? null, minInvestment: d.min ?? null },
+      });
+    }
+    version = 5;
   }
 
   await prisma.appMeta.upsert({ where: { key: VERSION_KEY }, create: { key: VERSION_KEY, value: String(version) }, update: { value: String(version) } });

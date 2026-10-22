@@ -49,11 +49,15 @@ export function YieldsBoard({ groups, labels, locale }: { groups: BoardGroup[]; 
 
       <div role="tabpanel" className={`grid grid-cols-2 gap-3 sm:gap-4 ${lgCols(group.quotes.length)}`}>
         {group.quotes.map((q, i) => (
-          <article
+          <a
             key={q.id}
-            className={`${group.quotes.length % 2 && i === group.quotes.length - 1 ? "col-span-2 lg:col-span-1" : ""} grid gap-3 rounded-3xl bg-card p-4 shadow-[0_1px_2px_rgba(15,22,48,.04)] ring-1 ring-line/60 sm:p-6`}
+            href={`/${locale}/securities/${q.id}`}
+            className={`${group.quotes.length % 2 && i === group.quotes.length - 1 ? "col-span-2 lg:col-span-1" : ""} group grid gap-3 rounded-3xl bg-card p-4 shadow-[0_1px_2px_rgba(15,22,48,.04)] ring-1 ring-line/60 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-primary/40 sm:p-6`}
           >
-            <h3 className="text-sm font-medium text-muted sm:text-base">{locale === "ar" ? q.labelAr : q.labelEn}</h3>
+            <h3 className="flex items-start justify-between gap-2 text-sm font-medium text-muted sm:text-base">
+              {locale === "ar" ? q.labelAr : q.labelEn}
+              <span aria-hidden className="text-primary/60 transition group-hover:text-primary rtl:-scale-x-100">›</span>
+            </h3>
             <div className="flex items-baseline gap-1">
               <span className="text-3xl font-bold tracking-tight sm:text-5xl">
                 <CountUp value={q.yieldPct} />
@@ -73,7 +77,7 @@ export function YieldsBoard({ groups, labels, locale }: { groups: BoardGroup[]; 
                 {labels.asOf} {q.asOfLabel}
               </span>
             </div>
-          </article>
+          </a>
         ))}
       </div>
     </div>

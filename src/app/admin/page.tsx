@@ -134,7 +134,13 @@ async function Yields({ error, saved }: { error?: string; saved: boolean }) {
       <Field label="Tax %"><input name="taxRatePct" type="number" step="0.5" min={0} max={100} defaultValue={q?.taxRatePct ?? ""} placeholder="—" className={inputCls} /></Field>
       <Field label="Order"><input name="sortOrder" type="number" min={0} defaultValue={q?.sortOrder ?? 0} className={inputCls} /></Field>
       <Field label="As of"><input name="asOf" type="date" defaultValue={q ? q.asOf.toISOString().slice(0, 10) : today} required className={inputCls} /></Field>
-      <div className="col-span-full grid grid-cols-2 gap-2 border-t border-line pt-2 md:grid-cols-[6rem_1fr_1fr_8.5rem]">
+      <div className="col-span-full grid grid-cols-2 gap-2 border-t border-line pt-2 md:grid-cols-[6rem_8.5rem_10rem_8rem]">
+        <Field label="Coupon %"><input name="couponRatePct" type="number" step="0.0001" min={0} max={100} defaultValue={q?.couponRatePct ?? ""} placeholder="—" className={inputCls} /></Field>
+        <Field label="Maturity date"><input name="maturityDate" type="date" defaultValue={q?.maturityDate ? q.maturityDate.toISOString().slice(0, 10) : ""} className={inputCls} /></Field>
+        <Field label="ISIN"><input name="isin" defaultValue={q?.isin ?? ""} placeholder="XS…" className={inputCls} /></Field>
+        <Field label="Min. order"><input name="minInvestment" type="number" min={0} step="1000" defaultValue={q?.minInvestment ?? ""} placeholder="—" className={inputCls} /></Field>
+      </div>
+      <div className="col-span-full grid grid-cols-2 gap-2 md:grid-cols-[6rem_1fr_1fr_8.5rem]">
         <Field label="Bank equiv. %"><input name="bankRatePct" type="number" step="0.01" min={0} max={100} defaultValue={q?.bankRatePct ?? ""} placeholder="—" className={inputCls} /></Field>
         <Field label="Bank label (English)"><input name="bankLabelEn" defaultValue={q?.bankLabelEn ?? ""} placeholder="Bank A · 12-month deposit" className={inputCls} /></Field>
         <Field label="Bank label (Arabic)"><input name="bankLabelAr" defaultValue={q?.bankLabelAr ?? ""} dir="rtl" className={inputCls} /></Field>
@@ -150,7 +156,7 @@ async function Yields({ error, saved }: { error?: string; saved: boolean }) {
   return (
     <div className="grid gap-3">
       <p className="text-sm text-muted">
-        Indicative annual yields, before taxes and fees. &ldquo;Coupons/yr&rdquo; 0 means paid at maturity (T-bills). &ldquo;Tax %&rdquo; is the withholding tax used for the after-tax view (20 for T-bills and bonds). Fill in &ldquo;Bank equiv.&rdquo; with the rate of a comparable bank deposit or CD for the same maturity (bank interest is tax-free) and the row appears in the &ldquo;side by side with bank deposits&rdquo; section. The landing page updates as soon as you save. Unticked &ldquo;Show&rdquo; rows are hidden.
+        Indicative annual yields, before taxes and fees. &ldquo;Coupons/yr&rdquo; 0 means paid at maturity (T-bills). &ldquo;Tax %&rdquo; is the withholding tax used for the after-tax view (20 for T-bills and bonds). Fill in &ldquo;Bank equiv.&rdquo; with the rate of a comparable bank deposit or CD for the same maturity (bank interest is tax-free) and the row appears in the &ldquo;side by side with bank deposits&rdquo; section. The landing page updates as soon as you save. Unticked &ldquo;Show&rdquo; rows are hidden. Coupon, maturity, ISIN and minimum order appear on each security&apos;s own page (leave the coupon empty for T-bills).
       </p>
       {error && <p className="text-sm text-accent">Couldn&apos;t save: check the &ldquo;{error}&rdquo; field.</p>}
       {saved && <p className="text-sm text-primary">Saved.</p>}

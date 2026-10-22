@@ -61,10 +61,15 @@ model YieldQuote {
   yieldPct       Float // annual yield before taxes and fees, e.g. 24.15
   couponsPerYear Int // 0 = paid at maturity (discount instruments)
   taxRatePct     Float? // withholding tax on the return, e.g. 20 for T-bills and bonds; null = unknown
+  // Security details shown on its own page (all optional; T-bills have no coupon).
+  couponRatePct  Float? // annual coupon, e.g. 7.6003
+  maturityDate   DateTime?
+  isin           String?
+  minInvestment  Float? // minimum order in the security's currency
   // Optional bank equivalent for the same maturity (deposit or CD; tax-free for
   // Egyptian residents). Rows that have one appear in "side by side with banks".
   bankRatePct    Float?
-  bankLabelEn    String? // e.g. "12-month bank deposit (CIB)"
+  bankLabelEn    String? // e.g. "Bank A · 12-month deposit"
   bankLabelAr    String?
   bankAsOf       DateTime?
   sortOrder      Int      @default(0)

@@ -32,6 +32,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     .map((q) => ({
       id: q.id,
       label: locale === "ar" ? q.labelAr : q.labelEn,
+      href: `/${locale}/securities/${q.id}`,
       yieldPct: q.yieldPct,
       taxRatePct: q.taxRatePct ?? null,
       asOf: formatAsOf(q.asOf, locale),

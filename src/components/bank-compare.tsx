@@ -6,6 +6,7 @@ import { afterTax } from "@/lib/yields";
 export type BankPair = {
   id: string;
   label: string; // e.g. "12-month T-bill"
+  href: string; // the security's own page
   yieldPct: number;
   taxRatePct: number | null;
   asOf: string;
@@ -52,6 +53,7 @@ export function BankCompare({ pairs, labels }: { pairs: BankPair[]; labels: Labe
                 tone="gov"
                 tag={labels.gov}
                 label={p.label}
+                href={p.href}
                 value={g}
                 width={(g / max) * 100}
                 note={`${labels.asOf} ${p.asOf}`}
@@ -72,14 +74,18 @@ export function BankCompare({ pairs, labels }: { pairs: BankPair[]; labels: Labe
   );
 }
 
-function Bar({ tone, tag, label, value, width, note }: { tone: "gov" | "bank"; tag: string; label: string; value: number; width: number; note: string }) {
+function Bar({ tone, tag, label, href, value, width, note }: { tone: "gov" | "bank"; tag: string; label: string; href?: string; value: number; width: number; note: string }) {
   const gov = tone === "gov";
   return (
     <div className="grid gap-1.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span className="flex min-w-0 items-center gap-2">
           <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${gov ? "bg-primary/10 text-primary" : "bg-ink/5 text-muted"}`}>{tag}</span>
-          <span className={`text-sm sm:text-base ${gov ? "font-semibold" : "text-muted"}`}>{label}</span>
+          {href ? (
+            <a href={href} className="text-sm font-semibold underline-offset-4 hover:text-primary hover:underline sm:text-base">{label}</a>
+          ) : (
+            <span className={`text-sm sm:text-base ${gov ? "font-semibold" : "text-muted"}`}>{label}</span>
+          )}
         </span>
         <span className={`num text-xl font-bold sm:text-2xl ${gov ? "text-primary" : "text-ink/70"}`}>{value.toFixed(2)}%</span>
       </div>
