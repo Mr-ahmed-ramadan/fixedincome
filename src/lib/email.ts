@@ -5,7 +5,7 @@ export type EmailMessage = {
   subject: string;
   text: string;
   html?: string;
-  replyTo?: string;
+  headers?: Record<string, string>;
 };
 
 const FROM = process.env.EMAIL_FROM || "AGYAL <hello@agyal.net>";
@@ -29,7 +29,7 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
       subject: message.subject,
       text: message.text,
       html: message.html,
-      replyTo: message.replyTo || process.env.EMAIL_REPLY_TO || undefined,
+      headers: message.headers,
     });
     if (error) throw new Error(`Resend: ${error.message}`);
     return;

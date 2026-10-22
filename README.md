@@ -74,15 +74,17 @@ overview then shows how many sign-ups each source brought in. Invite links
 3. **Settings → Environment Variables**: add the values from `.env.example`
    (`APP_URL=https://agyal.net`, `AUTH_SECRET`, `ADMIN_PASSWORD`,
    `AUTH_GOOGLE_ID/SECRET`, `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`,
-   `OWNER_EMAIL`, `NEXT_PUBLIC_CAL_URL`).
+   `NEXT_PUBLIC_CAL_URL`).
 4. Deploy. `vercel.json` makes Vercel run `npm run vercel-build`, which also
    applies database migrations and loads the starting yields. Yields are only
    loaded while the table is empty, so rates edited in `/admin` are never
    overwritten.
 5. **Domains**: add `agyal.net` and create the DNS records Vercel shows.
 6. **Email**: in Resend, add the domain `agyal.net` and create its DNS records.
-   To receive mail at hello@agyal.net in Gmail, set up free forwarding with
-   ImprovMX or Cloudflare Email Routing.
+   The site only *sends* email (confirmation, welcome with the "where we are"
+   timeline, partner acknowledgement). Nothing is forwarded: every sign-up,
+   note and partner request is stored in the database and read in `/admin`.
+   The current timeline step is `timeline.current` in `src/i18n/dictionaries.ts`.
 7. **Google sign-in**: in Google Cloud → Credentials → your OAuth client, add
    the redirect URI `https://agyal.net/api/auth/callback/google`, and set the
    consent screen's privacy policy to `https://agyal.net/en/privacy`.

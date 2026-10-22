@@ -95,7 +95,17 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
         <section id="partners" className="scroll-mt-16 bg-ink py-20 text-paper sm:py-28 [&_.text-muted]:text-paper/70">
           <div className="mx-auto grid max-w-site gap-12 px-4 sm:px-6 md:grid-cols-[1fr_1.2fr]">
-            <SectionHead eyebrow={t.partners.eyebrow} title={t.partners.title} sub={t.partners.sub} />
+            <div className="grid content-start gap-6">
+              <SectionHead eyebrow={t.partners.eyebrow} title={t.partners.title} sub={t.partners.sub} />
+              <ul className="grid gap-3" data-reveal data-reveal-delay="1">
+                {t.partners.perks.map((perk) => (
+                  <li key={perk} className="flex items-start gap-3 text-paper/90">
+                    <span aria-hidden className="mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-white">✓</span>
+                    {perk}
+                  </li>
+                ))}
+              </ul>
+            </div>
             <div className="rounded-4xl bg-card p-6 text-ink sm:p-8 [&_.text-muted]:!text-muted" data-reveal data-reveal-delay="1">
               <PartnerForm locale={locale} calUrl={CAL_URL} t={t.partners} />
             </div>

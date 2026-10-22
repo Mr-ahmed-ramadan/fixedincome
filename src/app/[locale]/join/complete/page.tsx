@@ -23,7 +23,7 @@ export default async function CompletePage({ params }: { params: Promise<{ local
       <p className="text-muted">{t.complete.sub}</p>
       <CompleteForm
         locale={locale}
-        t={{ phone: t.join.phone, country: t.join.country, submit: t.complete.submit, error: t.join.errors.phone, generic: t.join.errors.generic }}
+        t={{ phone: t.join.phone, country: t.join.country, submit: t.complete.submit, error: t.join.errors.phone, generic: t.join.errors.generic, note: t.join.note, notePlaceholder: t.join.notePlaceholder }}
       />
     </Shell>
   );

@@ -38,6 +38,18 @@ export function readVerifyToken(token: string | null | undefined, now = Date.now
   return userId;
 }
 
+/** A permanent unsubscribe token for email links: `<userId>.<signature>`. */
+export function createUnsubscribeToken(userId: string, key?: string): string {
+  return `${userId}.${sign(`unsub:${userId}`, key)}`;
+}
+
+export function readUnsubscribeToken(token: string | null | undefined, key?: string): string | null {
+  if (!token) return null;
+  const [userId, sig, extra] = token.split(".");
+  if (!userId || !sig || extra !== undefined) return null;
+  return safeEqual(sig, sign(`unsub:${userId}`, key)) ? userId : null;
+}
+
 /** Value stored in the admin cookie; changes whenever the admin password changes. */
 export function adminSessionValue(password: string, key?: string): string {
   return sign(`admin:${password}`, key);

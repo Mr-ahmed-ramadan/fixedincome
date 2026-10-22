@@ -27,8 +27,8 @@ export async function GET(req: Request) {
       include: { referredBy: { select: { email: true } }, _count: { select: { referrals: true } } },
     });
     body = csv([
-      ["created", "name", "email", "phone", "language", "signup", "confirmed", "invite_code", "invited_by", "friends_invited", "utm_source", "utm_medium", "utm_campaign", "utm_content"],
-      ...rows.map((r) => [r.createdAt, r.name, r.email, r.phone, r.locale, r.provider, r.emailVerifiedAt, r.referralCode, r.referredBy?.email, r._count.referrals, r.utmSource, r.utmMedium, r.utmCampaign, r.utmContent]),
+      ["created", "name", "email", "phone", "language", "signup", "confirmed", "invite_code", "invited_by", "friends_invited", "utm_source", "utm_medium", "utm_campaign", "utm_content", "note", "unsubscribed"],
+      ...rows.map((r) => [r.createdAt, r.name, r.email, r.phone, r.locale, r.provider, r.emailVerifiedAt, r.referralCode, r.referredBy?.email, r._count.referrals, r.utmSource, r.utmMedium, r.utmCampaign, r.utmContent, r.note, r.unsubscribedAt]),
     ]);
   }
 

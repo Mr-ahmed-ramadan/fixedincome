@@ -3,6 +3,14 @@ import { normalizePhone } from "./phone";
 
 const name = z.string().trim().min(2).max(120);
 const email = z.string().trim().toLowerCase().email().max(200);
+/** Optional free-text note; empty becomes null. */
+export const note = z
+  .string()
+  .trim()
+  .max(1000)
+  .optional()
+  .nullable()
+  .transform((v) => v || null);
 
 export const joinSchema = z
   .object({
@@ -10,6 +18,7 @@ export const joinSchema = z
     email,
     dial: z.string().trim(),
     phone: z.string().trim().min(5).max(30),
+    note,
   })
   .transform((v, ctx) => {
     const phone = normalizePhone(v.dial, v.phone);
@@ -17,7 +26,7 @@ export const joinSchema = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["phone"], message: "phone" });
       return z.NEVER;
     }
-    return { name: v.name, email: v.email, phone };
+    return { name: v.name, email: v.email, phone, note: v.note };
   });
 
 export const phoneOnlySchema = z
@@ -31,7 +40,7 @@ export const phoneOnlySchema = z
     return phone;
   });
 
-export const PARTNER_TYPES = ["BROKER", "BANK", "ASSET_MANAGER", "OTHER"] as const;
+export const PARTNER_TYPES = ["BROKER", "BANK", "ASSET_MANAGER", "OTHER", "GENERAL"] as const;
 
 export const partnerSchema = z.object({
   institution: z.string().trim().min(2).max(160),

@@ -40,3 +40,14 @@ describe("admin session", () => {
     expect(checkPassword("", undefined)).toBe(false);
   });
 });
+
+describe("unsubscribe tokens", () => {
+  it("round-trips and rejects tampering", async () => {
+    const { createUnsubscribeToken, readUnsubscribeToken } = await import("./tokens");
+    const token = createUnsubscribeToken("user_9", KEY);
+    expect(readUnsubscribeToken(token, KEY)).toBe("user_9");
+    expect(readUnsubscribeToken(token.replace("user_9", "user_8"), KEY)).toBeNull();
+    expect(readUnsubscribeToken(`${token}.x`, KEY)).toBeNull();
+    expect(readUnsubscribeToken(token, "other")).toBeNull();
+  });
+});

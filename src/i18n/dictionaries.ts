@@ -32,7 +32,7 @@ const en = {
     ratesTitle: "Indicative yields today",
     ratesNote: "A year, before tax and fees",
     ratesMore: "All rates and comparisons",
-    partnerLine: "Broker or bank? Let's talk",
+    partnerLine: "Broker or bank? Become a founding partner",
   },
   phone: {
     tabs: { home: "Home", payments: "Payments", portfolio: "Portfolio", buy: "Buy", activity: "Activity" },
@@ -158,7 +158,7 @@ const en = {
     steps: [
       { t: "Join the waitlist", d: "Leave your name, email and mobile. It takes 30 seconds." },
       { t: "Get early access", d: "We'll invite you as soon as the app opens, before the public launch." },
-      { t: "Invest from your phone", d: "Choose a bond, see what it pays and when, and invest through our licensed broker and bank partners." },
+      { t: "Invest from your phone", d: "Choose a bond, see what it pays and when, and invest through licensed brokers and banks." },
     ],
   },
   join: {
@@ -173,7 +173,10 @@ const en = {
     submitting: "Joining…",
     or: "or",
     google: "Continue with Google",
+    note: "Anything you'd like to tell us? (optional)",
+    notePlaceholder: "e.g. what you'd like to invest in, or a question",
     consent: "By joining you agree to our privacy policy. We'll only contact you about AGYAL.",
+    spamHint: "Not there within a few minutes? Check your Spam or Promotions folder and mark it as \"Not spam\".",
     sentTitle: "Check your inbox",
     sentBody: (email: string) => `We sent a confirmation link to ${email}. Tap it to secure your place.`,
     errors: {
@@ -184,12 +187,17 @@ const en = {
     },
   },
   partners: {
-    eyebrow: "For institutions",
-    title: "Brokers and banks, let's talk",
-    sub: "We're partnering with licensed brokers, banks and asset managers to bring Egyptian fixed income to a new generation of investors. Tell us about your institution and we'll arrange a call.",
+    eyebrow: "Founding partners",
+    title: "Become a founding partner",
+    sub: "We're building AGYAL with a small group of founding partners: licensed brokers, banks and asset managers who want to bring Egyptian fixed income to a new generation of investors. Tell us about your institution and we'll set up a call.",
+    perks: [
+      "Shape the product with us from the first version",
+      "Reach our waitlist of investors from day one",
+      "Priority placement for your T-bills, bonds and sukuk",
+    ],
     institution: "Institution",
     type: "Type",
-    types: { BROKER: "Broker", BANK: "Bank", ASSET_MANAGER: "Asset manager", OTHER: "Other" },
+    types: { BROKER: "Broker", BANK: "Bank", ASSET_MANAGER: "Asset manager", OTHER: "Other institution", GENERAL: "General enquiry" },
     name: "Your name",
     role: "Role (optional)",
     email: "Work email",
@@ -198,7 +206,8 @@ const en = {
     submit: "Request a call",
     submitting: "Sending…",
     sentTitle: "Thank you. We'll be in touch.",
-    sentBody: "We've received your request and will reply within two working days.",
+    sentBody: "We've saved your request and emailed you a confirmation. We'll reply within two working days.",
+    spamHint: "Can't see our email? Check your Spam or Promotions folder.",
     pickTime: "Or pick a time now",
     errors: {
       institution: "Please enter your institution.",
@@ -237,7 +246,7 @@ const en = {
       "AGYAL is in development. This website only collects interest for a waitlist. Nothing on it is an offer to sell, a solicitation to buy any security, or investment advice. Yields shown are indicative, before taxes and fees, and can change at any time.",
     privacy: "Privacy",
     terms: "Terms",
-    contact: "Contact",
+    contact: "Contact us",
     rights: "All rights reserved.",
   },
   verify: {
@@ -250,7 +259,7 @@ const en = {
   },
   welcome: {
     title: (name: string) => `You're on the list, ${name}.`,
-    sub: "We'll email you as soon as AGYAL opens.",
+    sub: "Here's where we are, and what happens next.",
     refTitle: "Invite your friends",
     refBody: "Share your personal link. Everyone who joins through it is counted here.",
     count: (n: number) => (n === 1 ? "1 friend joined" : `${n} friends joined`),
@@ -259,6 +268,25 @@ const en = {
     shareText:
       "I just joined the AGYAL waitlist: Egyptian bonds, T-bills and sukuk from your phone, in EGP and USD. Join me:",
     pending: "Confirm your email to activate your link. Check your inbox.",
+  },
+  timeline: {
+    title: "Where we are",
+    now: "Now",
+    current: 0, // index of the step we're on; change it as AGYAL progresses
+    steps: [
+      { t: "Waitlist open", d: "Investors and partners are signing up." },
+      { t: "Building with founding partners", d: "Licensed brokers and banks who will hold and settle your investments." },
+      { t: "Regulatory approvals", d: "Working with Egyptian regulators before any money moves." },
+      { t: "Early access", d: "We invite the waitlist in sign-up order. Friends you invite help you move up." },
+      { t: "Public launch", d: "AGYAL opens to everyone." },
+    ],
+  },
+  unsubscribe: {
+    okTitle: "You've been unsubscribed",
+    okBody: "You won't receive any more emails from AGYAL. Changed your mind? Join again any time.",
+    badTitle: "This link isn't valid",
+    badBody: "It may be incomplete. Copy the full link from the email, or contact us through the form on agyal.net.",
+    back: "Back to AGYAL",
   },
   complete: {
     title: "One last step",
@@ -272,14 +300,14 @@ const en = {
       "AGYAL (agyal.net) collects your name, email address and mobile number when you join the waitlist, and the details you send if you request a partner call. If you continue with Google, we receive your name and email from Google.",
       "We use this information only to manage the waitlist, confirm your email, tell you about AGYAL's launch, and reply to partnership requests. We record which link brought you here (for example a social media post or a friend's invite) to understand what works.",
       "We don't sell your data. It is stored with our hosting and email providers (Vercel, our database provider and Resend), who process it on our behalf.",
-      "You can ask us to see, correct or delete your information at any time by emailing hello@agyal.net. Every email we send also lets you reply to unsubscribe.",
+      "You can ask us to see, correct or delete your information at any time through the contact form on agyal.net (choose \"General enquiry\"). Every email we send has a one-click unsubscribe link.",
     ],
     termsTitle: "Terms of use",
     terms: [
       "This website introduces AGYAL, a fixed income investment app in development, and lets you join a waitlist. Joining does not open an account or create any obligation for you or for us.",
       "Nothing on this website is an offer to sell, a solicitation to buy any security, or investment, tax or legal advice. Yields are indicative, before taxes and fees, may be out of date, and are not a guarantee of future returns.",
       "Investment services will be provided only through licensed brokers and banks, under their own terms, once available.",
-      "Questions: hello@agyal.net.",
+      "Questions: use the contact form on agyal.net.",
     ],
   },
   emails: {
@@ -288,10 +316,19 @@ const en = {
       `Hi ${name},\n\nThanks for joining the AGYAL waitlist. Please confirm your email to secure your place:`,
     verifyCta: "Confirm my email",
     verifyFoot: "This link is valid for 7 days. If you didn't sign up, you can ignore this email.",
-    welcomeSubject: "You're on the AGYAL waitlist",
-    welcomeBody: (name: string) =>
-      `Hi ${name},\n\nYou're on the list. We'll email you as soon as AGYAL opens, so you can invest in Egyptian bonds, T-bills and sukuk from your phone.\n\nWant to bring friends along? Share your personal invite link:`,
-    welcomeFoot: "AGYAL · agyal.net. Reply to this email to unsubscribe.",
+    spamNote: "Tip: add hello@agyal.net to your contacts so our updates land in your inbox, not in Spam.",
+    welcomeSubject: "You're on the AGYAL waitlist: here's what's next",
+    welcomeIntro: (name: string) =>
+      `Hi ${name},\n\nYou're on the list. AGYAL will let you invest in Egyptian T-bills, government bonds, sukuk and Eurobonds from your phone. Here's where we are:`,
+    inviteText: "Want to bring friends along? Share your personal invite link:",
+    foot: "You're receiving this because you joined the AGYAL waitlist at agyal.net. This mailbox isn't monitored; to reach us, use the contact form on agyal.net.",
+    unsubscribe: "Unsubscribe",
+    partnerSubject: "We've received your request · AGYAL",
+    partnerBody: (name: string, institution: string) =>
+      `Hi ${name},\n\nThank you for your interest in becoming a founding partner of AGYAL. We've received the request from ${institution} and will reply within two working days to arrange a call.`,
+    partnerCal: "Prefer to pick a time now?",
+    partnerCalCta: "Book a call",
+    partnerFoot: "You're receiving this because you contacted AGYAL at agyal.net. This mailbox isn't monitored; we'll reply from our team directly.",
   },
 };
 
@@ -329,7 +366,7 @@ const ar: Dictionary = {
     ratesTitle: "العوائد الاسترشادية اليوم",
     ratesNote: "سنويًا، قبل الضرائب والرسوم",
     ratesMore: "كل العوائد والمقارنات",
-    partnerLine: "شركة وساطة أو بنك؟ لنتحدث",
+    partnerLine: "شركة وساطة أو بنك؟ كن شريكًا مؤسسًا",
   },
   phone: {
     tabs: { home: "الرئيسية", payments: "المدفوعات", portfolio: "المحفظة", buy: "شراء", activity: "الحركات" },
@@ -456,7 +493,7 @@ const ar: Dictionary = {
     steps: [
       { t: "انضم لقائمة الانتظار", d: "اترك اسمك وبريدك ورقم موبايلك. يستغرق ذلك 30 ثانية." },
       { t: "احصل على وصول مبكر", d: "سندعوك فور افتتاح التطبيق وقبل الإطلاق العام." },
-      { t: "استثمر من هاتفك", d: "اختر السند، واعرف عائده وموعد صرفه، واستثمر عبر شركائنا المرخّصين من الوسطاء والبنوك." },
+      { t: "استثمر من هاتفك", d: "اختر السند، واعرف عائده وموعد صرفه، واستثمر عبر وسطاء وبنوك مرخّصين." },
     ],
   },
   join: {
@@ -471,7 +508,10 @@ const ar: Dictionary = {
     submitting: "جارٍ الانضمام…",
     or: "أو",
     google: "المتابعة باستخدام Google",
+    note: "هل تحب أن تخبرنا بشيء؟ (اختياري)",
+    notePlaceholder: "مثلًا ما تريد الاستثمار فيه، أو سؤال",
     consent: "بانضمامك توافق على سياسة الخصوصية. لن نتواصل معك إلا بخصوص أجيال.",
+    spamHint: "لم تصلك خلال دقائق؟ تفقّد مجلد الرسائل غير المرغوب فيها (Spam) أو العروض (Promotions) وحدّدها كرسالة مهمة.",
     sentTitle: "تفقّد بريدك",
     sentBody: (email: string) => `أرسلنا رابط تأكيد إلى ${email}. اضغط عليه لتثبيت مكانك.`,
     errors: {
@@ -482,12 +522,17 @@ const ar: Dictionary = {
     },
   },
   partners: {
-    eyebrow: "للمؤسسات",
-    title: "الوسطاء والبنوك، لنتحدث",
-    sub: "نتعاون مع وسطاء وبنوك ومديري أصول مرخّصين لنقدّم الدخل الثابت المصري لجيل جديد من المستثمرين. أخبرنا عن مؤسستك وسنرتب مكالمة.",
+    eyebrow: "الشركاء المؤسسون",
+    title: "كن شريكًا مؤسسًا",
+    sub: "نبني أجيال مع مجموعة صغيرة من الشركاء المؤسسين: وسطاء وبنوك ومديرو أصول مرخّصون يريدون تقديم الدخل الثابت المصري لجيل جديد من المستثمرين. أخبرنا عن مؤسستك وسنرتب مكالمة.",
+    perks: [
+      "شارك في تشكيل المنتج معنا من أول نسخة",
+      "تواصل مع مستثمري قائمة الانتظار من اليوم الأول",
+      "أولوية في عرض أذون الخزانة والسندات والصكوك الخاصة بك",
+    ],
     institution: "المؤسسة",
     type: "النوع",
-    types: { BROKER: "شركة وساطة", BANK: "بنك", ASSET_MANAGER: "إدارة أصول", OTHER: "أخرى" },
+    types: { BROKER: "شركة وساطة", BANK: "بنك", ASSET_MANAGER: "إدارة أصول", OTHER: "مؤسسة أخرى", GENERAL: "استفسار عام" },
     name: "اسمك",
     role: "المنصب (اختياري)",
     email: "البريد الإلكتروني للعمل",
@@ -496,7 +541,8 @@ const ar: Dictionary = {
     submit: "اطلب مكالمة",
     submitting: "جارٍ الإرسال…",
     sentTitle: "شكرًا لك، سنتواصل معك قريبًا.",
-    sentBody: "استلمنا طلبك وسنرد خلال يومَي عمل.",
+    sentBody: "حفظنا طلبك وأرسلنا لك تأكيدًا على بريدك. سنرد خلال يومَي عمل.",
+    spamHint: "لا ترى رسالتنا؟ تفقّد مجلد Spam أو Promotions.",
     pickTime: "أو اختر موعدًا الآن",
     errors: {
       institution: "من فضلك اكتب اسم المؤسسة.",
@@ -548,7 +594,7 @@ const ar: Dictionary = {
   },
   welcome: {
     title: (name: string) => `أنت في القائمة يا ${name}.`,
-    sub: "سنراسلك فور افتتاح أجيال.",
+    sub: "هذه مرحلتنا الحالية وما الذي سيحدث بعد ذلك.",
     refTitle: "ادعُ أصدقاءك",
     refBody: "شارك رابطك الخاص. كل من ينضم من خلاله يُحتسب هنا.",
     count: (n: number) => (n === 1 ? "انضم صديق واحد" : n === 2 ? "انضم صديقان" : `انضم ${n} أصدقاء`),
@@ -557,6 +603,25 @@ const ar: Dictionary = {
     shareText:
       "انضممت لقائمة انتظار أجيال: سندات مصر وأذون الخزانة والصكوك من هاتفك، بالجنيه والدولار. انضم معي:",
     pending: "أكّد بريدك لتفعيل رابطك. تفقّد صندوق الوارد.",
+  },
+  timeline: {
+    title: "أين نحن الآن",
+    now: "الآن",
+    current: 0,
+    steps: [
+      { t: "فتح قائمة الانتظار", d: "المستثمرون والشركاء يسجّلون الآن." },
+      { t: "البناء مع الشركاء المؤسسين", d: "وسطاء وبنوك مرخّصون يحتفظون باستثماراتك ويسوّونها." },
+      { t: "الموافقات التنظيمية", d: "نعمل مع الجهات الرقابية المصرية قبل أي تعامل مالي." },
+      { t: "الوصول المبكر", d: "ندعو قائمة الانتظار حسب ترتيب التسجيل، وأصدقاؤك الذين تدعوهم يساعدونك على التقدّم." },
+      { t: "الإطلاق العام", d: "أجيال متاح للجميع." },
+    ],
+  },
+  unsubscribe: {
+    okTitle: "تم إلغاء اشتراكك",
+    okBody: "لن تصلك رسائل أخرى من أجيال. غيّرت رأيك؟ يمكنك الانضمام مجددًا في أي وقت.",
+    badTitle: "هذا الرابط غير صالح",
+    badBody: "قد يكون ناقصًا. انسخ الرابط كاملًا من الرسالة، أو تواصل معنا من خلال النموذج على agyal.net.",
+    back: "العودة إلى أجيال",
   },
   complete: {
     title: "خطوة أخيرة",
@@ -570,14 +635,14 @@ const ar: Dictionary = {
       "يجمع أجيال (agyal.net) اسمك وبريدك الإلكتروني ورقم موبايلك عند انضمامك لقائمة الانتظار، والبيانات التي ترسلها عند طلب مكالمة شراكة. إذا تابعت باستخدام Google نستلم اسمك وبريدك من Google.",
       "نستخدم هذه البيانات فقط لإدارة قائمة الانتظار وتأكيد بريدك وإبلاغك بإطلاق أجيال والرد على طلبات الشراكة. ونسجّل الرابط الذي أوصلك إلينا (مثل منشور على وسائل التواصل أو دعوة من صديق) لنعرف ما ينجح.",
       "لا نبيع بياناتك. تُحفظ لدى مزوّدي الاستضافة والبريد (Vercel ومزوّد قاعدة البيانات وResend) الذين يعالجونها نيابةً عنا.",
-      "يمكنك أن تطلب الاطلاع على بياناتك أو تصحيحها أو حذفها في أي وقت بمراسلة hello@agyal.net، ويمكنك الرد على أي رسالة منا لإلغاء الاشتراك.",
+      "يمكنك أن تطلب الاطلاع على بياناتك أو تصحيحها أو حذفها في أي وقت من خلال نموذج التواصل على agyal.net (اختر «استفسار عام»). وكل رسالة نرسلها تحتوي على رابط لإلغاء الاشتراك بضغطة واحدة.",
     ],
     termsTitle: "شروط الاستخدام",
     terms: [
       "يعرّف هذا الموقع بأجيال، وهو تطبيق للاستثمار في الدخل الثابت قيد التطوير، ويتيح لك الانضمام لقائمة انتظار. الانضمام لا يفتح حسابًا ولا يُنشئ أي التزام عليك أو علينا.",
       "لا يُعد أي محتوى في هذا الموقع عرضًا للبيع أو دعوة لشراء أي ورقة مالية أو نصيحة استثمارية أو ضريبية أو قانونية. العوائد استرشادية قبل الضرائب والرسوم، وقد لا تكون محدّثة، ولا تضمن العوائد المستقبلية.",
       "ستُقدَّم خدمات الاستثمار فقط من خلال وسطاء وبنوك مرخّصين وفق شروطهم الخاصة عند توفرها.",
-      "للاستفسارات: hello@agyal.net.",
+      "للاستفسارات: استخدم نموذج التواصل على agyal.net.",
     ],
   },
   emails: {
@@ -586,10 +651,19 @@ const ar: Dictionary = {
       `أهلًا ${name}،\n\nشكرًا لانضمامك لقائمة انتظار أجيال. من فضلك أكّد بريدك لتثبيت مكانك:`,
     verifyCta: "تأكيد بريدي",
     verifyFoot: "الرابط صالح لمدة 7 أيام. إذا لم تقم بالتسجيل، تجاهل هذه الرسالة.",
-    welcomeSubject: "أنت الآن في قائمة انتظار أجيال",
-    welcomeBody: (name: string) =>
-      `أهلًا ${name}،\n\nأنت الآن في القائمة. سنراسلك فور افتتاح أجيال لتستثمر في السندات المصرية وأذون الخزانة والصكوك من هاتفك.\n\nتحب تدعو أصدقاءك؟ شارك رابط الدعوة الخاص بك:`,
-    welcomeFoot: "أجيال · agyal.net. رُد على هذه الرسالة لإلغاء الاشتراك.",
+    spamNote: "نصيحة: أضف hello@agyal.net إلى جهات اتصالك حتى تصلك رسائلنا في صندوق الوارد وليس في Spam.",
+    welcomeSubject: "أنت في قائمة انتظار أجيال: هذا ما سيحدث بعد ذلك",
+    welcomeIntro: (name: string) =>
+      `أهلًا ${name}،\n\nأنت الآن في القائمة. سيتيح لك أجيال الاستثمار في أذون الخزانة والسندات الحكومية والصكوك واليوروبوند المصرية من هاتفك. هذه مرحلتنا الحالية:`,
+    inviteText: "تحب تدعو أصدقاءك؟ شارك رابط الدعوة الخاص بك:",
+    foot: "وصلتك هذه الرسالة لأنك انضممت لقائمة انتظار أجيال على agyal.net. هذا البريد لا تتم متابعته؛ للتواصل معنا استخدم نموذج التواصل على agyal.net.",
+    unsubscribe: "إلغاء الاشتراك",
+    partnerSubject: "استلمنا طلبك · أجيال",
+    partnerBody: (name: string, institution: string) =>
+      `أهلًا ${name}،\n\nشكرًا لاهتمامك بأن تكون شريكًا مؤسسًا لأجيال. استلمنا طلب ${institution} وسنرد خلال يومَي عمل لترتيب مكالمة.`,
+    partnerCal: "تفضّل اختيار موعد الآن؟",
+    partnerCalCta: "احجز مكالمة",
+    partnerFoot: "وصلتك هذه الرسالة لأنك تواصلت مع أجيال على agyal.net. هذا البريد لا تتم متابعته؛ سيرد عليك فريقنا مباشرة.",
   },
 };
 

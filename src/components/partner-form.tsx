@@ -17,6 +17,7 @@ export type PartnerLabels = {
   submitting: string;
   sentTitle: string;
   sentBody: string;
+  spamHint: string;
   pickTime: string;
   errors: Record<string, string>;
 };
@@ -31,6 +32,7 @@ export function PartnerForm({ locale, t, calUrl }: { locale: Locale; t: PartnerL
       <div className="grid justify-items-start gap-3 py-6" role="status">
         <h3 className="text-2xl font-bold">{t.sentTitle}</h3>
         <p className="text-muted">{t.sentBody}</p>
+        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-ink/80">{t.spamHint}</p>
         {calUrl && (
           <a href={calUrl} target="_blank" rel="noopener noreferrer" className="btn-primary mt-2">
             {t.pickTime}

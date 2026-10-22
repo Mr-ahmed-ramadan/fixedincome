@@ -6,9 +6,10 @@ import { auth, signIn } from "@/auth";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
-import { partnerNotification } from "@/lib/email-templates";
+import { partnerAckEmail } from "@/lib/email-templates";
+import { CAL_URL } from "@/lib/site";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/locale";
-import { firstErrorField, joinSchema, partnerSchema, phoneOnlySchema } from "@/lib/validation";
+import { firstErrorField, joinSchema, note as noteSchema, partnerSchema, phoneOnlySchema } from "@/lib/validation";
 import { completeGoogleMember, joinWithEmail } from "@/lib/waitlist";
 
 export type FormState = {
@@ -39,8 +40,9 @@ export async function joinAction(_prev: FormState, formData: FormData): Promise<
     email: formData.get("email"),
     dial: formData.get("dial"),
     phone: formData.get("phone"),
+    note: formData.get("note"),
   });
-  const values = typed(formData, ["name", "email", "dial", "phone"]);
+  const values = typed(formData, ["name", "email", "dial", "phone", "note"]);
   if (!parsed.success) return { status: "error", field: firstErrorField(parsed.error), values };
   if (isBot(formData)) return { status: "sent", email: parsed.data.email };
 
@@ -74,14 +76,12 @@ export async function partnerAction(_prev: FormState, formData: FormData): Promi
 
   try {
     const locale = localeOf(formData);
+    // Saved for the admin panel; the partner gets an acknowledgement (nothing is forwarded anywhere).
     const request = await prisma.partnerRequest.create({ data: { ...parsed.data, locale } });
-    const owner = process.env.OWNER_EMAIL;
-    if (owner) {
-      await sendEmail({ to: owner, replyTo: request.email, ...partnerNotification(request) }).catch((e) =>
-        console.error("partner notification failed", e),
-      );
-    }
-    return { status: "sent" };
+    await sendEmail({ to: request.email, ...partnerAckEmail(locale, request.name, request.institution, CAL_URL) }).catch((e) =>
+      console.error("partner acknowledgement failed", e),
+    );
+    return { status: "sent", email: request.email };
   } catch (e) {
     console.error("partnerAction failed", e);
     return { status: "error", field: "generic", values };
@@ -100,15 +100,16 @@ export async function completeAction(_prev: FormState, formData: FormData): Prom
   if (!email) redirect(`/${locale}#join`);
 
   const parsed = phoneOnlySchema.safeParse({ dial: formData.get("dial"), phone: formData.get("phone") });
-  if (!parsed.success) return { status: "error", field: "phone", values: typed(formData, ["dial", "phone"]) };
+  if (!parsed.success) return { status: "error", field: "phone", values: typed(formData, ["dial", "phone", "note"]) };
+  const note = noteSchema.parse(formData.get("note"));
 
   let code: string;
   try {
-    const user = await completeGoogleMember(email, parsed.data);
+    const user = await completeGoogleMember(email, parsed.data, note);
     code = user.referralCode;
   } catch (e) {
     console.error("completeAction failed", e);
-    return { status: "error", field: "generic", values: typed(formData, ["dial", "phone"]) };
+    return { status: "error", field: "generic", values: typed(formData, ["dial", "phone", "note"]) };
   }
   redirect(`/${locale}/welcome/${code}`);
 }

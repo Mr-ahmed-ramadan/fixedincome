@@ -19,6 +19,8 @@ model WaitlistUser {
   provider        String    @default("email") // email | google
   emailVerifiedAt DateTime?
   welcomeSentAt   DateTime?
+  unsubscribedAt  DateTime? // set by the unsubscribe link in our emails
+  note            String? // optional message left when joining (read in /admin)
   referralCode    String    @unique
   referredById    String?
   referredBy      WaitlistUser?  @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
@@ -38,7 +40,7 @@ model WaitlistUser {
 model PartnerRequest {
   id          String   @id @default(cuid())
   institution String
-  type        String // BROKER | BANK | ASSET_MANAGER | OTHER
+  type        String // BROKER | BANK | ASSET_MANAGER | OTHER | GENERAL (general enquiry)
   name        String
   role        String?
   email       String

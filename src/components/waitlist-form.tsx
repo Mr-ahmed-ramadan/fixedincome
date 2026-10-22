@@ -17,6 +17,9 @@ export type JoinLabels = {
   consent: string;
   sentTitle: string;
   sentBody: string; // contains {email}
+  spamHint: string;
+  note: string;
+  notePlaceholder: string;
   errors: Record<string, string>;
 };
 
@@ -36,6 +39,7 @@ export function WaitlistForm({ locale, t, google }: { locale: Locale; t: JoinLab
         </span>
         <h3 className="text-2xl font-bold">{t.sentTitle}</h3>
         <p className="max-w-sm text-muted">{t.sentBody.replace("{email}", state.email ?? "")}</p>
+        <p className="max-w-sm rounded-2xl bg-accent/10 px-4 py-3 text-sm text-ink/80">{t.spamHint}</p>
       </div>
     );
   }
@@ -72,6 +76,10 @@ export function WaitlistForm({ locale, t, google }: { locale: Locale; t: JoinLab
           <input id="email" name="email" defaultValue={state.values?.email} type="email" inputMode="email" autoComplete="email" dir="ltr" required className="field rtl:text-right" aria-invalid={err === "email" || undefined} />
         </div>
         <PhoneField locale={locale} label={t.phone} countryLabel={t.country} invalid={err === "phone"} values={state.values} />
+        <div className="grid gap-1.5">
+          <label htmlFor="note" className="text-sm font-medium text-ink/80">{t.note}</label>
+          <textarea id="note" name="note" rows={2} maxLength={1000} defaultValue={state.values?.note} placeholder={t.notePlaceholder} className="field resize-y" />
+        </div>
         {err && (
           <p role="alert" className="text-sm font-medium text-accent">
             {t.errors[err] ?? t.errors.generic}

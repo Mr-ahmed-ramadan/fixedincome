@@ -3,7 +3,7 @@ import { prisma } from "./db";
 import { sendEmail } from "./email";
 import { verifyEmail, welcomeEmail } from "./email-templates";
 import { generateReferralCode } from "./referral";
-import { createVerifyToken } from "./tokens";
+import { createUnsubscribeToken, createVerifyToken } from "./tokens";
 import { APP_URL, inviteUrl } from "./site";
 import type { Attribution } from "./attribution";
 import { isLocale, type Locale } from "./locale";
@@ -12,6 +12,7 @@ type NewMember = {
   name: string;
   email: string;
   phone?: string | null;
+  note?: string | null;
   locale: Locale;
   provider: "email" | "google";
   verified: boolean;
@@ -31,6 +32,7 @@ async function createMember(m: NewMember) {
           name: m.name,
           email: m.email,
           phone: m.phone ?? null,
+          note: m.note ?? null,
           locale: m.locale,
           provider: m.provider,
           emailVerifiedAt: m.verified ? new Date() : null,
@@ -61,9 +63,19 @@ export async function sendVerification(user: { id: string; name: string; email: 
   await sendEmail({ to: user.email, ...verifyEmail(locale, user.name, link) });
 }
 
-export async function sendWelcome(user: { id: string; name: string; email: string; locale: string; referralCode: string }) {
+export function unsubscribeUrl(user: { id: string; locale: string }) {
+  return `${APP_URL}/${memberLocale(user.locale)}/unsubscribe?token=${encodeURIComponent(createUnsubscribeToken(user.id))}`;
+}
+
+export async function sendWelcome(user: { id: string; name: string; email: string; locale: string; referralCode: string; unsubscribedAt?: Date | null }) {
   const locale = memberLocale(user.locale);
-  await sendEmail({ to: user.email, ...welcomeEmail(locale, user.name, inviteUrl(locale, user.referralCode)) });
+  if (user.unsubscribedAt) return;
+  const unsub = unsubscribeUrl(user);
+  await sendEmail({
+    to: user.email,
+    ...welcomeEmail(locale, user.name, inviteUrl(locale, user.referralCode), unsub),
+    headers: { "List-Unsubscribe": `<${unsub}>` },
+  });
   await prisma.waitlistUser.update({ where: { id: user.id }, data: { welcomeSentAt: new Date() } });
 }
 
@@ -73,7 +85,7 @@ export async function sendWelcome(user: { id: string; name: string; email: strin
  * invite link again. The page shows the same "check your inbox" either way,
  * so the form never reveals who is already on the list.
  */
-export async function joinWithEmail(input: { name: string; email: string; phone: string; locale: Locale; attribution: Attribution }) {
+export async function joinWithEmail(input: { name: string; email: string; phone: string; note?: string | null; locale: Locale; attribution: Attribution }) {
   const existing = await prisma.waitlistUser.findUnique({ where: { email: input.email } });
 
   if (!existing) {
@@ -84,13 +96,16 @@ export async function joinWithEmail(input: { name: string; email: string; phone:
   if (!existing.emailVerifiedAt) {
     const user = await prisma.waitlistUser.update({
       where: { id: existing.id },
-      data: { name: input.name, phone: input.phone, locale: input.locale },
+      data: { name: input.name, phone: input.phone, locale: input.locale, ...(input.note ? { note: input.note } : {}) },
     });
     await sendVerification(user);
     return;
   }
-  if (!existing.phone) {
-    await prisma.waitlistUser.update({ where: { id: existing.id }, data: { phone: input.phone } });
+  if (!existing.phone || input.note) {
+    await prisma.waitlistUser.update({
+      where: { id: existing.id },
+      data: { ...(existing.phone ? {} : { phone: input.phone }), ...(input.note ? { note: input.note } : {}) },
+    });
   }
   await sendWelcome(existing);
 }
@@ -119,12 +134,19 @@ export async function upsertGoogleMember(input: { name: string; email: string; l
 }
 
 /** Save a Google member's mobile number and send the welcome email if not sent yet. */
-export async function completeGoogleMember(email: string, phone: string) {
-  const user = await prisma.waitlistUser.update({ where: { email }, data: { phone } });
+export async function completeGoogleMember(email: string, phone: string, note?: string | null) {
+  const user = await prisma.waitlistUser.update({ where: { email }, data: { phone, ...(note ? { note } : {}) } });
   if (!user.welcomeSentAt) await sendWelcome(user);
   return user;
 }
 
 export async function countReferrals(userId: string) {
   return prisma.waitlistUser.count({ where: { referredById: userId, emailVerifiedAt: { not: null } } });
+}
+
+/** Stop all emails to a member (from the unsubscribe link). Returns false if the id is unknown. */
+export async function unsubscribeMember(userId: string) {
+  const res = await prisma.waitlistUser.updateMany({ where: { id: userId, unsubscribedAt: null }, data: { unsubscribedAt: new Date() } });
+  if (res.count > 0) return true;
+  return (await prisma.waitlistUser.count({ where: { id: userId } })) > 0;
 }

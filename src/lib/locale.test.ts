@@ -69,3 +69,15 @@ describe("Arabic coupon counts", () => {
     expect(c(12)).toBe("12 كوبونًا في السنة");
   });
 });
+
+describe("timeline", () => {
+  it("has a valid current step in both languages", async () => {
+    const { getDictionary } = await import("@/i18n/dictionaries");
+    for (const l of ["ar", "en"] as const) {
+      const tl = getDictionary(l).timeline;
+      expect(tl.current).toBeGreaterThanOrEqual(0);
+      expect(tl.current).toBeLessThan(tl.steps.length);
+    }
+    expect(getDictionary("ar").timeline.steps).toHaveLength(getDictionary("en").timeline.steps.length);
+  });
+});

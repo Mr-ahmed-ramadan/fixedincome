@@ -6,6 +6,7 @@ import { inviteUrl } from "@/lib/site";
 import { countReferrals } from "@/lib/waitlist";
 import { LadderMark } from "@/components/logo";
 import { ShareLink } from "@/components/share-link";
+import { Timeline } from "@/components/timeline";
 import { Shell } from "@/components/shell";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,8 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
       <LadderMark className="h-14 w-14" animated />
       <h1 className="text-3xl font-bold sm:text-4xl">{t.welcome.title(firstName)}</h1>
       <p className="text-lg text-muted">{user.emailVerifiedAt ? t.welcome.sub : t.welcome.pending}</p>
+      {!user.emailVerifiedAt && <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-ink/80">{t.join.spamHint}</p>}
+      <Timeline t={t.timeline} />
       {user.emailVerifiedAt && (
         <div className="grid gap-4 rounded-3xl bg-paper p-5">
           <div className="flex items-center justify-between gap-3">

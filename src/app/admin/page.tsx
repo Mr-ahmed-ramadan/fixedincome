@@ -194,9 +194,9 @@ async function Waitlist() {
         <a href="/admin/export?type=waitlist" className="btn-ghost px-4 py-2 text-sm">Download CSV</a>
       </div>
       <div className="overflow-x-auto rounded-3xl bg-card ring-1 ring-line/60">
-        <table className="w-full min-w-[56rem] text-sm">
+        <table className="w-full min-w-[64rem] text-sm">
           <thead className="text-start text-xs text-muted">
-            <tr>{["Joined", "Name", "Email", "Mobile", "Lang", "Via", "Confirmed", "Friends", "Source"].map((h) => <th key={h} className="px-3 py-2 text-start font-medium">{h}</th>)}</tr>
+            <tr>{["Joined", "Name", "Email", "Mobile", "Lang", "Via", "Confirmed", "Friends", "Source", "Note"].map((h) => <th key={h} className="px-3 py-2 text-start font-medium">{h}</th>)}</tr>
           </thead>
           <tbody>
             {users.map((u) => (
@@ -207,9 +207,10 @@ async function Waitlist() {
                 <td className="num px-3 py-2">{u.phone}</td>
                 <td className="px-3 py-2">{u.locale}</td>
                 <td className="px-3 py-2">{u.provider}</td>
-                <td className="px-3 py-2">{u.emailVerifiedAt ? "Yes" : "No"}</td>
+                <td className="px-3 py-2">{u.emailVerifiedAt ? "Yes" : "No"}{u.unsubscribedAt ? " · unsubscribed" : ""}</td>
                 <td className="num px-3 py-2">{u._count.referrals}</td>
                 <td className="px-3 py-2">{[u.utmSource, u.utmCampaign].filter(Boolean).join(" / ")}</td>
+                <td className="max-w-xs whitespace-pre-wrap px-3 py-2 text-muted">{u.note}</td>
               </tr>
             ))}
           </tbody>
