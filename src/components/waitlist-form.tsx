@@ -25,7 +25,8 @@ export type JoinLabels = {
 
 const initial: FormState = { status: "idle" };
 
-export function WaitlistForm({ locale, t, google }: { locale: Locale; t: JoinLabels; google: boolean }) {
+/** `idPrefix` keeps field ids unique when a second copy sits in the Buy/Sell popup; `defaultNote` prefills the note. */
+export function WaitlistForm({ locale, t, google, idPrefix = "", defaultNote }: { locale: Locale; t: JoinLabels; google: boolean; idPrefix?: string; defaultNote?: string }) {
   const [state, action, pending] = useActionState(joinAction, initial);
 
   if (state.status === "sent") {
@@ -68,17 +69,17 @@ export function WaitlistForm({ locale, t, google }: { locale: Locale; t: JoinLab
         <input type="hidden" name="locale" value={locale} />
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
         <div className="grid gap-1.5">
-          <label htmlFor="name" className="text-sm font-medium text-ink/80">{t.name}</label>
-          <input id="name" name="name" defaultValue={state.values?.name} autoComplete="name" required className="field" aria-invalid={err === "name" || undefined} />
+          <label htmlFor={`${idPrefix}name`} className="text-sm font-medium text-ink/80">{t.name}</label>
+          <input id={`${idPrefix}name`} name="name" defaultValue={state.values?.name} autoComplete="name" required className="field" aria-invalid={err === "name" || undefined} />
         </div>
         <div className="grid gap-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-ink/80">{t.email}</label>
-          <input id="email" name="email" defaultValue={state.values?.email} type="email" inputMode="email" autoComplete="email" dir="ltr" required className="field rtl:text-right" aria-invalid={err === "email" || undefined} />
+          <label htmlFor={`${idPrefix}email`} className="text-sm font-medium text-ink/80">{t.email}</label>
+          <input id={`${idPrefix}email`} name="email" defaultValue={state.values?.email} type="email" inputMode="email" autoComplete="email" dir="ltr" required className="field rtl:text-right" aria-invalid={err === "email" || undefined} />
         </div>
-        <PhoneField locale={locale} label={t.phone} countryLabel={t.country} invalid={err === "phone"} values={state.values} />
+        <PhoneField idPrefix={idPrefix} locale={locale} label={t.phone} countryLabel={t.country} invalid={err === "phone"} values={state.values} />
         <div className="grid gap-1.5">
-          <label htmlFor="note" className="text-sm font-medium text-ink/80">{t.note}</label>
-          <textarea id="note" name="note" rows={2} maxLength={1000} defaultValue={state.values?.note} placeholder={t.notePlaceholder} className="field resize-y" />
+          <label htmlFor={`${idPrefix}note`} className="text-sm font-medium text-ink/80">{t.note}</label>
+          <textarea id={`${idPrefix}note`} name="note" rows={2} maxLength={1000} defaultValue={state.values?.note ?? defaultNote} placeholder={t.notePlaceholder} className="field resize-y" />
         </div>
         {err && (
           <p role="alert" className="text-sm font-medium text-accent">

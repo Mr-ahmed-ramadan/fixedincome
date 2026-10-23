@@ -11,6 +11,9 @@
 //   gives each bond's coupon, maturity, ISIN and minimum order (v5).
 // - T-bill maturities: auction date plus 91/182/364 days.
 // - USD T-bill: last published one-year result (Dec 2025); starts hidden.
+//   v6 shows it with the CBE's 1 Jun 2026 one-year auction (4.20% accepted).
+// - EGP 9-month (273-day) T-bill (v6): auction of 18 Oct 2026, 25.383%
+//   weighted average as reported by market press (issued 20 Oct 2026).
 // - Bank equivalents (EnterpriseAM savings guide, 16 Aug 2026): CIB 12-month
 //   deposit up to 17%; NBE Platinum / Banque Misr Al Qimma 3-year CD 17.75%
 //   paid monthly. Shown on the site as anonymous "Bank A" / "Bank B". Bank
@@ -89,6 +92,8 @@ const v5Details: Record<string, { coupon?: number; maturity: string; isin?: stri
   "Eurobond 2031 · 6.375%": { coupon: 6.375, maturity: "2031-04-11", isin: "XS1980255936", min: 100_000 },
 };
 
+const v6NineMonth: Row = { currency: "EGP", instrument: "TBILL", labelEn: "9-month T-bill", labelAr: "أذون خزانة 9 شهور", tenorMonths: 9, yieldPct: 25.38, couponsPerYear: 0, sortOrder: 25, asOf: "2026-10-18", taxRatePct: 20 };
+
 async function insert(rows: Row[]) {
   for (const { bank, ...r } of rows) {
     await prisma.yieldQuote.create({
@@ -135,6 +140,16 @@ async function main() {
       });
     }
     version = 5;
+  }
+  if (version < 6) {
+    // v6: very short tenors, the 9-month EGP T-bill and the one-year USD T-bill.
+    await insert([v6NineMonth]);
+    await prisma.yieldQuote.updateMany({ where: { labelEn: "9-month T-bill" }, data: { maturityDate: day("2027-07-20") } });
+    await prisma.yieldQuote.updateMany({
+      where: { labelEn: "12-month USD T-bill" },
+      data: { active: true, yieldPct: 4.2, asOf: day("2026-06-01"), maturityDate: day("2027-06-01") },
+    });
+    version = 6;
   }
 
   await prisma.appMeta.upsert({ where: { key: VERSION_KEY }, create: { key: VERSION_KEY, value: String(version) }, update: { value: String(version) } });

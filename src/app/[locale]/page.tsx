@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { pageLocale, otherLocalePath } from "@/lib/page-locale";
 import { CAL_URL, googleEnabled } from "@/lib/site";
+import { maturityOf, tenorBucket, yearsTo } from "@/lib/schedule";
 import { formatAsOf, groupByCurrency, type Quote } from "@/lib/yields";
 import { Compare, VsFunds } from "@/components/compare";
 import { Footer } from "@/components/footer";
@@ -9,12 +10,12 @@ import { Hero } from "@/components/hero";
 import { PartnerForm } from "@/components/partner-form";
 import { Faq, HowSteps, SectionHead } from "@/components/sections";
 import { WaitlistForm } from "@/components/waitlist-form";
-import { YieldsBoard } from "@/components/yields-board";
+import { RatesTable, type RateGroup } from "@/components/rates-table";
 
 // Re-render at most every 5 minutes; saving yields in /admin refreshes immediately.
 export const revalidate = 300;
 
-async function loadQuotes(): Promise<Quote[]> {
+async function loadQuotes(): Promise<(Quote & { couponRatePct: number | null; maturityDate: Date | null })[]> {
   try {
     return await prisma.yieldQuote.findMany({ where: { active: true }, orderBy: [{ currency: "asc" }, { sortOrder: "asc" }] });
   } catch (e) {
@@ -45,37 +46,60 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     quotes: g.quotes.map((q) => ({ ...q, asOf: new Date(q.asOf).toISOString(), asOfLabel: formatAsOf(q.asOf, locale) })),
   }));
   const egpBills = groups.find((g) => g.currency === "EGP")?.quotes.filter((q) => q.instrument === "TBILL") ?? [];
-  // Hero highlights: the EGP T-bills plus the first rate in each other currency.
-  const highlights = [...egpBills.slice(0, 3), ...groups.filter((g) => g.currency !== "EGP").map((g) => g.quotes[0])].slice(0, 4);
+  // The rates table: every security per currency, shortest first.
+  const now = new Date();
+  const rateGroups: RateGroup[] = groupByCurrency(all).map((g) => ({
+    currency: g.currency,
+    rows: g.quotes
+      .map((q) => {
+        const maturity = maturityOf(q);
+        const years = yearsTo(maturity, now);
+        return {
+          id: q.id,
+          name: locale === "ar" ? q.labelAr : q.labelEn,
+          instrument: q.instrument,
+          bucket: t.yields.table.buckets[tenorBucket(years)],
+          yieldPct: q.yieldPct,
+          couponRatePct: q.couponRatePct,
+          couponsPerYear: q.couponsPerYear,
+          years,
+          maturity: formatAsOf(maturity, locale),
+          asOf: formatAsOf(q.asOf, locale),
+        };
+      })
+      .sort((a, b) => a.years - b.years),
+  }));
+  const joinLabels = { ...t.join, sentBody: t.join.sentBody("{email}") };
 
   return (
     <>
       <Header t={t} locale={locale} switchHref={otherLocalePath(locale)} />
       <main>
-        <Hero t={t} locale={locale} rates={groups[0]?.quotes ?? []} egpBills={egpBills} highlights={highlights} />
-
-        <section id="yields" className="scroll-mt-16 py-20 sm:py-28">
-          <div className="mx-auto grid max-w-site gap-10 px-4 sm:px-6">
-            <SectionHead eyebrow={t.yields.eyebrow} title={t.yields.title} sub={t.yields.sub} />
-            <div data-reveal data-reveal-delay="1">
-              <YieldsBoard
-                locale={locale}
-                groups={groups}
-                labels={{
-                  currencies: t.yields.currencies,
-                  atMaturity: t.yields.atMaturity,
-                  couponLabels: Object.fromEntries([1, 2, 4, 12].map((n) => [n, t.yields.coupons(n)])),
-                  types: t.yields.filters,
-                  asOf: t.yields.asOf,
-                  empty: t.yields.empty,
-                  bankEq: t.yields.bankEq,
-                  soon: t.yields.soon,
-                }}
-              />
-            </div>
-            <p className="max-w-3xl text-sm text-muted">{t.yields.note}</p>
-          </div>
-        </section>
+        <Hero
+          t={t}
+          locale={locale}
+          rates={groups[0]?.quotes ?? []}
+          egpBills={egpBills}
+          table={
+            <RatesTable
+              locale={locale}
+              groups={rateGroups}
+              trade={t.trade}
+              join={joinLabels}
+              google={googleEnabled()}
+              labels={{
+                ...t.yields.table,
+                currencies: t.yields.currencies,
+                types: t.yields.filters,
+                atMaturity: t.yields.atMaturityShort,
+                asOf: t.yields.asOf,
+                empty: t.yields.empty,
+                soon: t.yields.soon,
+                note: t.yields.note,
+              }}
+            />
+          }
+        />
 
         <Compare t={t} pairs={pairs} />
         <VsFunds t={t} />
@@ -90,7 +114,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               <WaitlistForm
                 locale={locale}
                 google={googleEnabled()}
-                t={{ ...t.join, sentBody: t.join.sentBody("{email}") }}
+                t={joinLabels}
               />
             </div>
           </div>

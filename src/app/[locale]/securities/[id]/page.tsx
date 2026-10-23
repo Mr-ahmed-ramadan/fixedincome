@@ -1,22 +1,17 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { pageLocale, otherLocalePath } from "@/lib/page-locale";
-import { payPattern } from "@/lib/schedule";
+import { maturityOf, payPattern } from "@/lib/schedule";
 import { formatAsOf } from "@/lib/yields";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { SecurityCalculator } from "@/components/security-calculator";
+import { SecurityTrade } from "@/components/trade-dialog";
+import { googleEnabled } from "@/lib/site";
 
 export const revalidate = 300;
 
 const DEFAULT_AMOUNT: Record<string, number> = { EGP: 100_000, USD: 10_000, EUR: 10_000 };
-
-function maturityOf(q: { maturityDate: Date | null; asOf: Date; tenorMonths: number }) {
-  if (q.maturityDate) return q.maturityDate;
-  const d = new Date(q.asOf);
-  d.setUTCMonth(d.getUTCMonth() + q.tenorMonths);
-  return d;
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; id: string }> }) {
   const { locale, t } = await pageLocale(params);
@@ -73,9 +68,12 @@ export default async function SecurityPage({ params }: { params: Promise<{ local
             <span className="rounded-full bg-ink/5 px-3 py-1">{s.government}</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-5xl rtl:tracking-normal">{label}</h1>
-          <p className="text-muted">
-            {s.issuer}: {intl ? s.issuers.intl : s.issuers.local}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-muted">
+              {s.issuer}: {intl ? s.issuers.intl : s.issuers.local}
+            </p>
+            <SecurityTrade name={label} labels={t.trade} locale={locale} join={{ ...t.join, sentBody: t.join.sentBody("{email}") }} google={googleEnabled()} />
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

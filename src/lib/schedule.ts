@@ -92,3 +92,28 @@ export function payPattern(couponsPerYear: number, maturity: Date, settle: Date)
   if (couponsPerYear === 0) return { once: true };
   return { once: false, count: couponDates(maturity, couponsPerYear, settle).length, everyMonths: 12 / couponsPerYear };
 }
+
+/** A security's maturity: the stored date, or the rate's date plus its tenor. */
+export function maturityOf(q: { maturityDate?: Date | string | null; asOf: Date | string; tenorMonths: number }): Date {
+  if (q.maturityDate) return new Date(q.maturityDate);
+  const d = new Date(q.asOf);
+  d.setUTCMonth(d.getUTCMonth() + q.tenorMonths);
+  return d;
+}
+
+/** Years from `from` to `maturity` (never negative). */
+export function yearsTo(maturity: Date, from: Date): number {
+  return Math.max(0, (maturity.getTime() - from.getTime()) / DAY / 365);
+}
+
+/** The tenor bucket a security falls in by years left, as on a broker's "best yield per tenor" screen. */
+export const TENOR_BUCKETS = ["0-1y", "1-3y", "3-5y", "5-10y", "10-20y", "20y+"] as const;
+export type TenorBucket = (typeof TENOR_BUCKETS)[number];
+export function tenorBucket(years: number): TenorBucket {
+  if (years < 1) return "0-1y";
+  if (years < 3) return "1-3y";
+  if (years < 5) return "3-5y";
+  if (years < 10) return "5-10y";
+  if (years < 20) return "10-20y";
+  return "20y+";
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonths, buildSchedule, couponDates, payPattern } from "./schedule";
+import { addMonths, buildSchedule, couponDates, maturityOf, payPattern, tenorBucket, yearsTo } from "./schedule";
 
 const d = (s: string) => new Date(`${s}T12:00:00Z`);
 
@@ -49,5 +49,22 @@ describe("payPattern", () => {
     expect(payPattern(0, d("2027-10-13"), d("2026-10-22"))).toEqual({ once: true });
     expect(payPattern(2, d("2029-03-01"), d("2026-10-22"))).toEqual({ once: false, count: 5, everyMonths: 6 });
     expect(payPattern(1, d("2031-04-11"), d("2026-10-22"))).toEqual({ once: false, count: 5, everyMonths: 12 });
+  });
+});
+
+describe("tenors", () => {
+  it("uses the stored maturity, or the rate date plus the tenor", () => {
+    expect(maturityOf({ maturityDate: d("2029-03-01"), asOf: d("2026-10-21"), tenorMonths: 29 }).toISOString().slice(0, 10)).toBe("2029-03-01");
+    expect(maturityOf({ maturityDate: null, asOf: d("2026-10-13"), tenorMonths: 3 }).toISOString().slice(0, 10)).toBe("2027-01-13");
+  });
+  it("puts each security in a tenor bucket by years left", () => {
+    const now = d("2026-10-23");
+    expect(tenorBucket(yearsTo(d("2027-01-12"), now))).toBe("0-1y");
+    expect(tenorBucket(yearsTo(d("2029-03-01"), now))).toBe("1-3y");
+    expect(tenorBucket(yearsTo(d("2031-02-16"), now))).toBe("3-5y");
+    expect(tenorBucket(yearsTo(d("2034-05-20"), now))).toBe("5-10y");
+    expect(tenorBucket(yearsTo(d("2040-04-30"), now))).toBe("10-20y");
+    expect(tenorBucket(yearsTo(d("2049-03-01"), now))).toBe("20y+");
+    expect(yearsTo(d("2020-01-01"), now)).toBe(0);
   });
 });

@@ -1,6 +1,5 @@
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/lib/locale";
-import { CountUp } from "./count-up";
 import { PhoneScreens, type PhoneQuote } from "./phone-screens";
 
 type Props = {
@@ -8,10 +7,10 @@ type Props = {
   locale: Locale;
   rates: PhoneQuote[]; // first currency on the board, for the phone
   egpBills: PhoneQuote[];
-  highlights: PhoneQuote[]; // a few rates shown right in the hero
+  table: React.ReactNode; // the rates table, full width under the pitch and phone
 };
 
-export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
+export function Hero({ t, locale, rates, egpBills, table }: Props) {
   const couponLabels = Object.fromEntries([1, 2, 4, 12].map((n) => [n, t.yields.coupons(n)]));
 
   return (
@@ -23,7 +22,7 @@ export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
       </div>
 
       <div className="mx-auto grid max-w-site items-center gap-10 px-4 pb-14 pt-8 sm:px-6 md:grid-cols-[1.15fr_1fr] md:pb-20 md:pt-14">
-        <div className="grid min-w-0 gap-5">
+        <div className="order-1 grid min-w-0 gap-5">
           <span className="eyebrow" data-reveal>{t.hero.eyebrow}</span>
           <h1
             className="text-[2.5rem] font-bold leading-[1.05] tracking-tight sm:text-6xl rtl:leading-[1.25] rtl:tracking-normal"
@@ -42,29 +41,6 @@ export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
             ))}
           </ul>
 
-          {highlights.length > 0 && (
-            <div className="grid gap-2" data-reveal data-reveal-delay="2">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-sm font-semibold">{t.hero.ratesTitle}</h2>
-                <span className="text-xs text-muted">{t.hero.ratesNote}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {highlights.map((q) => (
-                  <a key={q.id} href={`/${locale}/securities/${q.id}`} className="grid gap-0.5 rounded-2xl bg-card p-3 ring-1 ring-line/70 transition hover:ring-primary/40">
-                    <span className="flex items-center justify-between gap-1 text-[11px] text-muted">
-                      <span className="truncate">{locale === "ar" ? q.labelAr : q.labelEn}</span>
-                      <span className="shrink-0 rounded bg-ink/5 px-1 text-[10px] font-semibold">{q.currency}</span>
-                    </span>
-                    <span className="text-2xl font-bold tracking-tight">
-                      <CountUp value={q.yieldPct} />
-                      <span className="text-sm font-semibold text-muted">%</span>
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="flex flex-wrap gap-3" data-reveal data-reveal-delay="3">
             <a href={`/${locale}#join`} className="btn-primary">{t.hero.cta}</a>
             <a href={`/${locale}#yields`} className="btn-ghost">{t.hero.ratesMore}</a>
@@ -74,7 +50,16 @@ export function Hero({ t, locale, rates, egpBills, highlights }: Props) {
           </a>
         </div>
 
-        <div className="flex justify-center" data-reveal data-reveal-delay="2">
+        {/* Phones: pitch, then the rates, then the app preview. Wide screens: pitch beside the phone, rates below. */}
+        <div id="yields" className="order-2 min-w-0 scroll-mt-20 md:order-3 md:col-span-2" data-reveal data-reveal-delay="2">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{t.hero.ratesTitle}</h2>
+            <span className="text-sm text-muted">{t.hero.ratesNote}</span>
+          </div>
+          {table}
+        </div>
+
+        <div className="order-3 flex justify-center md:order-2" data-reveal data-reveal-delay="2">
           <PhoneScreens
             locale={locale}
             brand={t.brand}

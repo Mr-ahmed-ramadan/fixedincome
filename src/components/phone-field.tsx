@@ -2,12 +2,12 @@ import { COUNTRY_CODES } from "@/lib/phone";
 import type { Locale } from "@/lib/locale";
 
 /** Country code picker + local number, laid out left-to-right in both languages. */
-export function PhoneField({ locale, label, countryLabel, invalid, values }: { locale: Locale; label: string; countryLabel: string; invalid?: boolean; values?: Record<string, string> }) {
+export function PhoneField({ locale, label, countryLabel, invalid, values, idPrefix = "" }: { locale: Locale; label: string; countryLabel: string; invalid?: boolean; values?: Record<string, string>; idPrefix?: string }) {
   return (
     <div className="grid min-w-0 gap-1.5">
-      <label htmlFor="phone" className="text-sm font-medium text-ink/80">{label}</label>
+      <label htmlFor={`${idPrefix}phone`} className="text-sm font-medium text-ink/80">{label}</label>
       <div className="flex min-w-0 gap-2" dir="ltr">
-        <select id="dial" name="dial" aria-label={countryLabel} defaultValue={values?.dial || "20"} className="field w-auto shrink-0 pe-8">
+        <select id={`${idPrefix}dial`} name="dial" aria-label={countryLabel} defaultValue={values?.dial || "20"} className="field w-auto shrink-0 pe-8">
           {COUNTRY_CODES.map((c) => (
             <option key={c.iso} value={c.dial} title={locale === "ar" ? c.ar : c.en}>
               {c.iso} +{c.dial}
@@ -15,7 +15,7 @@ export function PhoneField({ locale, label, countryLabel, invalid, values }: { l
           ))}
         </select>
         <input
-          id="phone"
+          id={`${idPrefix}phone`}
           name="phone"
           type="tel"
           inputMode="tel"
