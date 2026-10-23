@@ -3,7 +3,7 @@ import type { Locale } from "@/lib/locale";
 const en = {
   dir: "ltr" as "ltr" | "rtl",
   meta: {
-    title: "AGYAL · Egypt's bonds, T-bills and sukuk",
+    title: "AGYAL | Egypt's bonds, T-bills and sukuk",
     description:
       "Invest in Egyptian government bonds, treasury bills and sukuk in EGP and USD, from your phone. Join the AGYAL waitlist.",
     ogTitle: "Invest in Egypt's bonds, T-bills and sukuk",
@@ -369,7 +369,7 @@ export type Dictionary = typeof en;
 const ar: Dictionary = {
   dir: "rtl",
   meta: {
-    title: "أجيال · سندات مصر وأذون الخزانة والصكوك",
+    title: "أجيال | سندات مصر وأذون الخزانة والصكوك",
     description:
       "استثمر في السندات الحكومية المصرية وأذون الخزانة والصكوك بالجنيه والدولار من هاتفك. انضم لقائمة انتظار أجيال.",
     ogTitle: "استثمر في سندات مصر وأذون الخزانة والصكوك",

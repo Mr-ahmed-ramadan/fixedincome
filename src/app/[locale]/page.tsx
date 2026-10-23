@@ -15,6 +15,17 @@ import { RatesTable, type RateGroup } from "@/components/rates-table";
 // Re-render at most every 5 minutes; saving yields in /admin refreshes immediately.
 export const revalidate = 300;
 
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  return { alternates: { canonical: `/${locale}`, languages: { ar: "/ar", en: "/en", "x-default": "/" } } };
+}
+
+/** Tells Google the site's name and logo (shown next to search results). */
+const STRUCTURED_DATA = JSON.stringify([
+  { "@context": "https://schema.org", "@type": "WebSite", name: "AGYAL", alternateName: "أجيال", url: "https://agyal.net/" },
+  { "@context": "https://schema.org", "@type": "Organization", name: "AGYAL", url: "https://agyal.net/", logo: "https://agyal.net/brand/agyal-profile-1024.png" },
+]);
+
 async function loadQuotes(): Promise<(Quote & { couponRatePct: number | null; maturityDate: Date | null })[]> {
   try {
     return await prisma.yieldQuote.findMany({ where: { active: true }, orderBy: [{ currency: "asc" }, { sortOrder: "asc" }] });
@@ -73,6 +84,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: STRUCTURED_DATA }} />
       <Header t={t} locale={locale} switchHref={otherLocalePath(locale)} />
       <main>
         <Hero

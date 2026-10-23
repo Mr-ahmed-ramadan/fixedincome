@@ -34,10 +34,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     metadataBase: new URL(APP_URL),
     title: t.meta.title,
     description: t.meta.description,
-    alternates: { canonical: `/${locale}`, languages: { ar: "/ar", en: "/en", "x-default": "/" } },
+    applicationName: "AGYAL",
     openGraph: {
       type: "website",
-      siteName: "AGYAL · أجيال",
+      siteName: "AGYAL",
       title: t.meta.ogTitle,
       description: t.meta.ogSub,
       url: `/${locale}`,

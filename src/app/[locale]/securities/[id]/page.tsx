@@ -17,7 +17,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale, t } = await pageLocale(params);
   const q = await prisma.yieldQuote.findFirst({ where: { id: (await params).id, active: true } }).catch(() => null);
   if (!q) return {};
-  return { title: `${locale === "ar" ? q.labelAr : q.labelEn} · ${q.yieldPct.toFixed(2)}% · ${t.brand}` };
+  const path = `/securities/${q.id}`;
+  return {
+    title: `${locale === "ar" ? q.labelAr : q.labelEn} ${q.yieldPct.toFixed(2)}% | ${t.brand}`,
+    alternates: { canonical: `/${locale}${path}`, languages: { ar: `/ar${path}`, en: `/en${path}` } },
+  };
 }
 
 export default async function SecurityPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
