@@ -50,56 +50,95 @@ function timelineText(locale: Locale): string {
   ].join("\n");
 }
 
-/** Client-safe HTML email shell: brand row, body blocks, footer (with optional unsubscribe link). */
-function layout(locale: Locale, blocks: string, foot: string, unsubscribe?: { label: string; href: string }): string {
-  const dir = locale === "ar" ? "rtl" : "ltr";
-  const font =
-    locale === "ar"
-      ? "'IBM Plex Sans Arabic',Tahoma,Arial,sans-serif"
-      : "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-  const brand = getDictionary(locale).brand;
+/** Every email carries both languages, in this order. Swap to put Arabic first. */
+export const EMAIL_LANGS: Locale[] = ["en", "ar"];
+
+const FONT: Record<Locale, string> = {
+  ar: "'IBM Plex Sans Arabic',Tahoma,Arial,sans-serif",
+  en: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
+};
+const LANG_LABEL: Record<Locale, string> = { en: "English", ar: "العربية" };
+
+/** One block per language: its own direction and font, with a labelled divider before the second. */
+function bilingualHtml(build: (lang: Locale) => string): string {
+  return EMAIL_LANGS.map((lang, i) => {
+    const divider =
+      i === 0
+        ? ""
+        : `<div style="margin:8px 0 20px;border-top:1px solid #E6E8F0;padding-top:16px;font-size:12px;font-weight:700;letter-spacing:.04em;color:${BRAND.accent}" dir="${lang === "ar" ? "rtl" : "ltr"}">${LANG_LABEL[lang]}</div>`;
+    return `${divider}<div lang="${lang}" dir="${lang === "ar" ? "rtl" : "ltr"}" style="font-family:${FONT[lang]};text-align:${lang === "ar" ? "right" : "left"}">${build(lang)}</div>`;
+  }).join("");
+}
+
+function bilingualText(build: (lang: Locale) => string): string {
+  return EMAIL_LANGS.map((lang, i) => (i === 0 ? "" : `\n\n— ${LANG_LABEL[lang]} —\n\n`) + build(lang)).join("");
+}
+
+const bilingualSubject = (pick: (t: ReturnType<typeof getDictionary>["emails"]) => string) =>
+  EMAIL_LANGS.map((lang) => pick(getDictionary(lang).emails)).join(" | ");
+
+/** Client-safe HTML email shell: brand row, body blocks, footers in both languages (with optional unsubscribe link). */
+function layout(blocks: string, foot: (lang: Locale) => string, unsubscribe?: string): string {
   const unsub = unsubscribe
-    ? `<br><a href="${escape(unsubscribe.href)}" style="color:${BRAND.muted};text-decoration:underline">${escape(unsubscribe.label)}</a>`
+    ? `<p style="margin:12px 0 0"><a href="${escape(unsubscribe)}" style="color:${BRAND.muted};text-decoration:underline">${EMAIL_LANGS.map((l) => escape(getDictionary(l).emails.unsubscribe)).join(" · ")}</a></p>`
     : "";
-  return `<!doctype html><html lang="${locale}" dir="${dir}"><body style="margin:0;background:${BRAND.paper};font-family:${font}">
+  const foots = EMAIL_LANGS.map(
+    (l) => `<p lang="${l}" dir="${l === "ar" ? "rtl" : "ltr"}" style="margin:0 0 8px;font-family:${FONT[l]};text-align:${l === "ar" ? "right" : "left"}">${escape(foot(l))}</p>`,
+  ).join("");
+  return `<!doctype html><html lang="${EMAIL_LANGS[0]}"><body style="margin:0;background:${BRAND.paper};font-family:${FONT[EMAIL_LANGS[0]]}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.paper};padding:32px 16px"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;padding:32px" dir="${dir}">
-<tr><td style="padding-bottom:24px;font-size:20px;font-weight:700;color:${BRAND.ink}">${LADDER}&nbsp;&nbsp;${escape(brand)}</td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;padding:32px">
+<tr><td style="padding-bottom:24px;font-size:20px;font-weight:700;color:${BRAND.ink}">${LADDER}&nbsp;&nbsp;AGYAL · أجيال</td></tr>
 <tr><td>${blocks}</td></tr>
-<tr><td style="padding-top:20px;border-top:1px solid #E6E8F0;font-size:12px;line-height:1.5;color:${BRAND.muted}">${escape(foot)}${unsub}</td></tr>
+<tr><td style="padding-top:20px;border-top:1px solid #E6E8F0;font-size:12px;line-height:1.5;color:${BRAND.muted}">${foots}${unsub}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 
-export function verifyEmail(locale: Locale, name: string, link: string) {
-  const t = getDictionary(locale).emails;
+// `locale` is the language the person signed up in; it only decides which pages the links open.
+// The content always comes in both languages (EMAIL_LANGS).
+
+export function verifyEmail(_locale: Locale, name: string, link: string) {
+  const tt = (l: Locale) => getDictionary(l).emails;
   return {
-    subject: t.verifySubject,
-    text: `${t.verifyBody(name)}\n\n${link}\n\n${t.verifyFoot}\n${t.spamNote}`,
-    html: layout(locale, P(t.verifyBody(name)) + BUTTON(t.verifyCta, link) + SMALL(t.verifyFoot) + SMALL(t.spamNote), t.foot),
+    subject: bilingualSubject((t) => t.verifySubject),
+    text: bilingualText((l) => `${tt(l).verifyBody(name)}\n\n${link}\n\n${tt(l).verifyFoot}\n${tt(l).spamNote}`),
+    html: layout(
+      bilingualHtml((l) => P(tt(l).verifyBody(name)) + BUTTON(tt(l).verifyCta, link) + SMALL(tt(l).verifyFoot) + SMALL(tt(l).spamNote)),
+      (l) => tt(l).foot,
+    ),
   };
 }
 
-export function welcomeEmail(locale: Locale, name: string, invite: string, unsubscribeUrl: string) {
-  const t = getDictionary(locale).emails;
+export function welcomeEmail(_locale: Locale, name: string, invite: string, unsubscribeUrl: string) {
+  const tt = (l: Locale) => getDictionary(l).emails;
   return {
-    subject: t.welcomeSubject,
-    text: `${t.welcomeIntro(name)}\n\n${timelineText(locale)}\n\n${t.inviteText}\n${invite}\n\n${t.spamNote}\n\n${t.foot}\n${t.unsubscribe}: ${unsubscribeUrl}`,
+    subject: bilingualSubject((t) => t.welcomeSubject),
+    text:
+      bilingualText((l) => `${tt(l).welcomeIntro(name)}\n\n${timelineText(l)}\n\n${tt(l).inviteText}\n${invite}\n\n${tt(l).spamNote}\n\n${tt(l).foot}`) +
+      `\n\n${EMAIL_LANGS.map((l) => tt(l).unsubscribe).join(" · ")}: ${unsubscribeUrl}`,
     html: layout(
-      locale,
-      P(t.welcomeIntro(name)) + timelineHtml(locale) + P(t.inviteText) + BUTTON(invite.replace(/^https?:\/\//, ""), invite) + SMALL(t.spamNote),
-      t.foot,
-      { label: t.unsubscribe, href: unsubscribeUrl },
+      bilingualHtml(
+        (l) => P(tt(l).welcomeIntro(name)) + timelineHtml(l) + P(tt(l).inviteText) + BUTTON(invite.replace(/^https?:\/\//, ""), invite) + SMALL(tt(l).spamNote),
+      ),
+      (l) => tt(l).foot,
+      unsubscribeUrl,
     ),
   };
 }
 
 /** Sent to a broker/bank after they submit the partner form. */
-export function partnerAckEmail(locale: Locale, name: string, institution: string, calUrl: string) {
-  const t = getDictionary(locale).emails;
-  const cal = calUrl ? P(t.partnerCal) + BUTTON(t.partnerCalCta, calUrl) : "";
+export function partnerAckEmail(_locale: Locale, name: string, institution: string, calUrl: string) {
+  const tt = (l: Locale) => getDictionary(l).emails;
   return {
-    subject: t.partnerSubject,
-    text: `${t.partnerBody(name, institution)}${calUrl ? `\n\n${t.partnerCal} ${calUrl}` : ""}\n\n${t.spamNote}\n\n${t.partnerFoot}`,
-    html: layout(locale, P(t.partnerBody(name, institution)) + cal + SMALL(t.spamNote), t.partnerFoot),
+    subject: bilingualSubject((t) => t.partnerSubject),
+    text: bilingualText(
+      (l) => `${tt(l).partnerBody(name, institution)}${calUrl ? `\n\n${tt(l).partnerCal} ${calUrl}` : ""}\n\n${tt(l).spamNote}\n\n${tt(l).partnerFoot}`,
+    ),
+    html: layout(
+      bilingualHtml(
+        (l) => P(tt(l).partnerBody(name, institution)) + (calUrl ? P(tt(l).partnerCal) + BUTTON(tt(l).partnerCalCta, calUrl) : "") + SMALL(tt(l).spamNote),
+      ),
+      (l) => tt(l).partnerFoot,
+    ),
   };
 }
