@@ -7,7 +7,9 @@ import { Wordmark } from "@/components/logo";
 import { CopyButton } from "@/components/copy-button";
 import { TASK_KINDS, trackedLink } from "@/lib/validation";
 import { emailDailyCap, keys, peek } from "@/lib/limits";
-import { addTask, sendPending, cycleChannelStatus, cycleTaskStatus, deleteQuote, deleteTask, login, logout, saveQuote, updateChannel, updateTask } from "./actions";
+import { milestones, statusOf } from "@/lib/milestones";
+import { CAL_URL, googleEnabled } from "@/lib/site";
+import { addTask, sendPending, toggleMilestone, cycleChannelStatus, cycleTaskStatus, deleteQuote, deleteTask, login, logout, saveQuote, updateChannel, updateTask } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -82,10 +84,14 @@ function Card({ label, value, hint }: { label: string; value: string | number; h
 
 async function Overview({ sentPending, leftPending }: { sentPending?: string; leftPending?: string }) {
   const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
-  const [emailsToday, blockedToday, pending] = await Promise.all([
+  const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
+  const [emailsToday, emailsThisMonth, blockedToday, pending, signupsThisMonth, doneRows] = await Promise.all([
     peek(keys.emailToday()),
+    peek(keys.emailMonth()),
     peek(keys.blockedToday()),
     prisma.waitlistUser.count({ where: { pendingEmail: { not: null }, unsubscribedAt: null } }),
+    prisma.waitlistUser.count({ where: { createdAt: { gte: monthStart } } }),
+    prisma.appMeta.findMany({ where: { key: { startsWith: "milestone-done:" } } }),
   ]);
   const cap = emailDailyCap();
   const [total, confirmed, lastWeek, partners, referred, sources] = await Promise.all([
@@ -136,6 +142,21 @@ async function Overview({ sentPending, leftPending }: { sentPending?: string; le
           </div>
         </div>
       </section>
+      <Milestones
+        done={new Set(doneRows.map((r) => r.key.replace("milestone-done:", "")))}
+        metrics={{
+          emailsToday,
+          emailsThisMonth,
+          emailDailyCap: cap,
+          pendingEmails: pending,
+          signupsThisMonth,
+          signupsTotal: total,
+          partnerRequests: partners,
+          blockedToday,
+          calUrlSet: Boolean(CAL_URL),
+          googleSignInSet: googleEnabled(),
+        }}
+      />
       <section className="grid gap-3 rounded-3xl bg-card p-5 ring-1 ring-line/60">
         <h2 className="font-semibold">Where sign-ups come from (utm_source)</h2>
         <table className="text-sm">
@@ -591,5 +612,73 @@ async function Marketing({ error }: { error?: string }) {
         </form>
       </section>
     </div>
+  );
+}
+
+// --- Growth milestones: what to upgrade or set up, and when.
+const MILESTONE_STYLE = {
+  hit: { pill: "bg-accent text-white", label: "Action needed", bar: "bg-accent" },
+  soon: { pill: "bg-accent/15 text-accent", label: "Coming up", bar: "bg-accent/70" },
+  ok: { pill: "bg-ink/5 text-muted", label: "Fine for now", bar: "bg-primary" },
+} as const;
+
+function Milestones({ metrics, done }: { metrics: Parameters<typeof milestones>[0]; done: Set<string> }) {
+  const order = { hit: 0, soon: 1, ok: 2 } as const;
+  const list = milestones(metrics)
+    .map((m) => ({ ...m, status: m.manual ? ("soon" as const) : statusOf(m), isDone: done.has(m.id) }))
+    .sort((a, b) => Number(a.isDone) - Number(b.isDone) || order[a.status] - order[b.status]);
+  const open = list.filter((m) => !m.isDone && m.status !== "ok").length;
+  return (
+    <section id="milestones" className="grid gap-4 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-semibold">Milestones</h2>
+        <span className="text-xs text-muted">
+          {open ? `${open} need attention` : "Nothing to do right now"}. Each one tells you what to do when its number gets close.
+        </span>
+      </div>
+      <ul className="grid gap-2">
+        {list.map((m) => {
+          const st = MILESTONE_STYLE[m.status];
+          return (
+            <li key={m.id} className={`grid gap-2 rounded-2xl p-4 ring-1 ring-line/60 md:grid-cols-[1fr_auto] ${m.isDone ? "opacity-50" : ""}`}>
+              <div className="grid gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${m.isDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : st.pill}`}>
+                    {m.isDone ? "✓ Done" : m.manual ? "Check once" : st.label}
+                  </span>
+                  <span className="font-semibold">{m.title}</span>
+                </div>
+                {!m.manual && (
+                  <div className="flex items-center gap-3">
+                    <span className="h-1.5 w-40 overflow-hidden rounded-full bg-ink/5">
+                      <span className={`block h-full rounded-full ${st.bar}`} style={{ width: `${Math.min(100, (m.value / m.limit) * 100)}%` }} />
+                    </span>
+                    <span className="num text-xs text-muted">
+                      {m.value.toLocaleString("en-US")} / {m.limit.toLocaleString("en-US")} {m.unit}
+                    </span>
+                  </div>
+                )}
+                <p className="text-sm text-ink/80">
+                  <span className="font-semibold">What to do: </span>
+                  {m.action}
+                  {m.cost && <span className="text-muted"> · {m.cost}</span>}
+                </p>
+                {m.link && (
+                  <a href={m.link.href} target="_blank" rel="noreferrer" className="w-fit text-xs font-semibold text-primary underline">
+                    {m.link.label} ↗
+                  </a>
+                )}
+              </div>
+              <form action={toggleMilestone} className="self-start">
+                <input type="hidden" name="id" value={m.id} />
+                <button className="whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/30 hover:bg-primary/5">
+                  {m.isDone ? "Undo" : "Mark done"}
+                </button>
+              </form>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

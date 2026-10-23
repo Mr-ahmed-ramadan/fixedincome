@@ -35,13 +35,17 @@ export function emailDailyCap(): number {
 
 export const keys = {
   emailToday: () => `email:${utcDay()}`,
+  emailMonth: () => `email-month:${utcDay().slice(0, 7)}`,
   blockedToday: () => `blocked:${utcDay()}`,
   ip: (form: "join" | "partner", ip: string) => `${form}:ip:${ip}`,
 };
 
 /** Take one email from today's budget. False means today's cap is reached: queue the email instead. */
-export function takeEmailBudget(): Promise<boolean> {
-  return tryConsume(keys.emailToday(), untilMidnightUtc(), emailDailyCap());
+export async function takeEmailBudget(): Promise<boolean> {
+  const ok = await tryConsume(keys.emailToday(), untilMidnightUtc(), emailDailyCap());
+  // Monthly total, for the email-plan milestones in /admin.
+  if (ok) await tryConsume(keys.emailMonth(), 32 * 24 * 60 * MINUTE, Number.MAX_SAFE_INTEGER);
+  return ok;
 }
 
 /** Per-network limit for public forms: join 5 / 10 min, partner 3 / 10 min. */

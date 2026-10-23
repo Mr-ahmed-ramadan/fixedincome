@@ -105,3 +105,13 @@ export async function sendPending() {
   const { sent, left } = await sendPendingEmails(50);
   redirect(`/admin?sentPending=${sent}&leftPending=${left}`);
 }
+
+// --- Growth milestones: remember which ones are handled
+export async function toggleMilestone(formData: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const key = `milestone-done:${String(formData.get("id"))}`;
+  const existing = await prisma.appMeta.findUnique({ where: { key } });
+  if (existing) await prisma.appMeta.delete({ where: { key } });
+  else await prisma.appMeta.create({ data: { key, value: new Date().toISOString() } });
+  redirect("/admin#milestones");
+}
