@@ -8,6 +8,7 @@ import { CopyButton } from "@/components/copy-button";
 import { TASK_KINDS, trackedLink } from "@/lib/validation";
 import { emailDailyCap, keys, peek } from "@/lib/limits";
 import { milestones, statusOf } from "@/lib/milestones";
+import { CRON_LAST_KEY } from "@/lib/cron";
 import { CAL_URL, googleEnabled } from "@/lib/site";
 import { addTask, sendPending, toggleMilestone, cycleChannelStatus, cycleTaskStatus, deleteQuote, deleteTask, login, logout, saveQuote, updateChannel, updateTask } from "./actions";
 
@@ -85,14 +86,16 @@ function Card({ label, value, hint }: { label: string; value: string | number; h
 async function Overview({ sentPending, leftPending }: { sentPending?: string; leftPending?: string }) {
   const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
   const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
-  const [emailsToday, emailsThisMonth, blockedToday, pending, signupsThisMonth, doneRows] = await Promise.all([
+  const [emailsToday, emailsThisMonth, blockedToday, pending, signupsThisMonth, doneRows, cronRow] = await Promise.all([
     peek(keys.emailToday()),
     peek(keys.emailMonth()),
     peek(keys.blockedToday()),
     prisma.waitlistUser.count({ where: { pendingEmail: { not: null }, unsubscribedAt: null } }),
     prisma.waitlistUser.count({ where: { createdAt: { gte: monthStart } } }),
     prisma.appMeta.findMany({ where: { key: { startsWith: "milestone-done:" } } }),
+    prisma.appMeta.findUnique({ where: { key: CRON_LAST_KEY } }),
   ]);
+  const lastRun = cronRow ? (JSON.parse(cronRow.value) as { at: string; sent: number; left: number }) : null;
   const cap = emailDailyCap();
   const [total, confirmed, lastWeek, partners, referred, sources] = await Promise.all([
     prisma.waitlistUser.count(),
@@ -135,6 +138,10 @@ async function Overview({ sentPending, leftPending }: { sentPending?: string; le
               </form>
             )}
             {sentPending != null && <span className="text-xs text-muted">Sent {sentPending}; {leftPending} still waiting.</span>}
+            <span className="text-xs text-muted">
+              Sent automatically every day at 00:15 UTC (about 2–3 am Cairo).
+              {lastRun ? ` Last run ${lastRun.at.slice(0, 16).replace("T", " ")} UTC: sent ${lastRun.sent}, ${lastRun.left} left.` : " Not run yet."}
+            </span>
           </div>
           <div className="grid content-start gap-1.5">
             <span className="text-xs text-muted">Blocked attempts today (too many from one connection)</span>

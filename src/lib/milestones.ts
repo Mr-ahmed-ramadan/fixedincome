@@ -51,7 +51,8 @@ export function milestones(m: Metrics): Milestone[] {
       value: Math.max(m.emailsToday, m.pendingEmails > 0 ? m.emailDailyCap : 0),
       limit: m.emailDailyCap,
       unit: "emails today",
-      action: "Upgrade Resend to Pro, then in Vercel set EMAIL_DAILY_CAP=1500 and redeploy. Queued emails can then be sent with “Send now”.",
+      action:
+        "Over the limit, emails wait and go out automatically the next morning (00:15 UTC). If that happens more than now and then, upgrade Resend to Pro and set EMAIL_DAILY_CAP=1500 in Vercel so nobody waits.",
       link: { label: "Resend billing", href: "https://resend.com/settings/billing" },
       cost: "$20/month for 50,000 emails",
     },
