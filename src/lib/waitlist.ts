@@ -7,6 +7,7 @@ import { createUnsubscribeToken, createVerifyToken } from "./tokens";
 import { APP_URL, inviteUrl } from "./site";
 import type { Attribution } from "./attribution";
 import { isLocale, type Locale } from "./locale";
+import { RESEND_AFTER, sentRecently, takeEmailBudget } from "./limits";
 
 type NewMember = {
   name: string;
@@ -57,10 +58,31 @@ function memberLocale(locale: string): Locale {
   return isLocale(locale) ? locale : "ar";
 }
 
+/**
+ * Send within today's email budget. Never throws: if the budget is used up or
+ * the provider fails, the member is marked so /admin can send it later, and the
+ * visitor still sees "check your inbox".
+ */
+async function sendOrQueue(userId: string, kind: "VERIFY" | "WELCOME", send: () => Promise<void>): Promise<boolean> {
+  try {
+    if (await takeEmailBudget()) {
+      await send();
+      return true;
+    }
+    console.warn(`Daily email cap reached; queued ${kind} for ${userId}`);
+  } catch (e) {
+    console.error(`Sending ${kind} failed; queued for ${userId}`, e);
+  }
+  await prisma.waitlistUser.update({ where: { id: userId }, data: { pendingEmail: kind } });
+  return false;
+}
+
 export async function sendVerification(user: { id: string; name: string; email: string; locale: string }) {
   const locale = memberLocale(user.locale);
   const link = `${APP_URL}/${locale}/verify?token=${encodeURIComponent(createVerifyToken(user.id))}`;
-  await sendEmail({ to: user.email, ...verifyEmail(locale, user.name, link) });
+  const sent = await sendOrQueue(user.id, "VERIFY", () => sendEmail({ to: user.email, ...verifyEmail(locale, user.name, link) }));
+  if (sent) await prisma.waitlistUser.update({ where: { id: user.id }, data: { verifySentAt: new Date(), pendingEmail: null } });
+  return sent;
 }
 
 export function unsubscribeUrl(user: { id: string; locale: string }) {
@@ -69,14 +91,30 @@ export function unsubscribeUrl(user: { id: string; locale: string }) {
 
 export async function sendWelcome(user: { id: string; name: string; email: string; locale: string; referralCode: string; unsubscribedAt?: Date | null }) {
   const locale = memberLocale(user.locale);
-  if (user.unsubscribedAt) return;
+  if (user.unsubscribedAt) return false;
   const unsub = unsubscribeUrl(user);
-  await sendEmail({
-    to: user.email,
-    ...welcomeEmail(locale, user.name, inviteUrl(locale, user.referralCode), unsub),
-    headers: { "List-Unsubscribe": `<${unsub}>` },
-  });
-  await prisma.waitlistUser.update({ where: { id: user.id }, data: { welcomeSentAt: new Date() } });
+  const sent = await sendOrQueue(user.id, "WELCOME", () =>
+    sendEmail({
+      to: user.email,
+      ...welcomeEmail(locale, user.name, inviteUrl(locale, user.referralCode), unsub),
+      headers: { "List-Unsubscribe": `<${unsub}>` },
+    }),
+  );
+  if (sent) await prisma.waitlistUser.update({ where: { id: user.id }, data: { welcomeSentAt: new Date(), pendingEmail: null } });
+  return sent;
+}
+
+/** Send queued emails (from /admin), oldest first, until the list or today's budget runs out. */
+export async function sendPendingEmails(max = 50): Promise<{ sent: number; left: number }> {
+  const users = await prisma.waitlistUser.findMany({ where: { pendingEmail: { not: null }, unsubscribedAt: null }, orderBy: { createdAt: "asc" }, take: max });
+  let sent = 0;
+  for (const u of users) {
+    const ok = u.pendingEmail === "WELCOME" ? await sendWelcome(u) : await sendVerification(u);
+    if (!ok) break; // budget used up or provider failing: stop and try again later
+    sent++;
+  }
+  const left = await prisma.waitlistUser.count({ where: { pendingEmail: { not: null }, unsubscribedAt: null } });
+  return { sent, left };
 }
 
 /**
@@ -98,7 +136,8 @@ export async function joinWithEmail(input: { name: string; email: string; phone:
       where: { id: existing.id },
       data: { name: input.name, phone: input.phone, locale: input.locale, ...(input.note ? { note: input.note } : {}) },
     });
-    await sendVerification(user);
+    // Submitting again re-sends the link, but not more than once every few minutes.
+    if (!sentRecently(existing.verifySentAt, RESEND_AFTER.VERIFY)) await sendVerification(user);
     return;
   }
   if (!existing.phone || input.note) {
@@ -107,7 +146,7 @@ export async function joinWithEmail(input: { name: string; email: string; phone:
       data: { ...(existing.phone ? {} : { phone: input.phone }), ...(input.note ? { note: input.note } : {}) },
     });
   }
-  await sendWelcome(existing);
+  if (!sentRecently(existing.welcomeSentAt, RESEND_AFTER.WELCOME)) await sendWelcome(existing);
 }
 
 /** Mark a member confirmed (from the email link) and send the welcome email once. */

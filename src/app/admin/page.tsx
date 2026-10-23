@@ -6,11 +6,12 @@ import { CURRENCIES, INSTRUMENTS } from "@/lib/yields";
 import { Wordmark } from "@/components/logo";
 import { CopyButton } from "@/components/copy-button";
 import { TASK_KINDS, trackedLink } from "@/lib/validation";
-import { addTask, cycleChannelStatus, cycleTaskStatus, deleteQuote, deleteTask, login, logout, saveQuote, updateChannel, updateTask } from "./actions";
+import { emailDailyCap, keys, peek } from "@/lib/limits";
+import { addTask, sendPending, cycleChannelStatus, cycleTaskStatus, deleteQuote, deleteTask, login, logout, saveQuote, updateChannel, updateTask } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-type Search = Promise<{ tab?: string; error?: string; saved?: string }>;
+type Search = Promise<{ tab?: string; error?: string; saved?: string; sentPending?: string; leftPending?: string }>;
 
 export default async function AdminPage({ searchParams }: { searchParams: Search }) {
   const sp = await searchParams;
@@ -47,7 +48,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
       {tab === "yields" && <Yields error={sp.error} saved={Boolean(sp.saved)} />}
       {tab === "waitlist" && <Waitlist />}
       {tab === "partners" && <Partners />}
-      {tab === "overview" && <Overview />}
+      {tab === "overview" && <Overview sentPending={sp.sentPending} leftPending={sp.leftPending} />}
       {tab === "brand" && <Brand />}
       {tab === "marketing" && <Marketing error={sp.error} />}
     </div>
@@ -79,8 +80,14 @@ function Card({ label, value, hint }: { label: string; value: string | number; h
   );
 }
 
-async function Overview() {
+async function Overview({ sentPending, leftPending }: { sentPending?: string; leftPending?: string }) {
   const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+  const [emailsToday, blockedToday, pending] = await Promise.all([
+    peek(keys.emailToday()),
+    peek(keys.blockedToday()),
+    prisma.waitlistUser.count({ where: { pendingEmail: { not: null }, unsubscribedAt: null } }),
+  ]);
+  const cap = emailDailyCap();
   const [total, confirmed, lastWeek, partners, referred, sources] = await Promise.all([
     prisma.waitlistUser.count(),
     prisma.waitlistUser.count({ where: { emailVerifiedAt: { not: null } } }),
@@ -98,6 +105,37 @@ async function Overview() {
         <Card label="Came via a friend" value={referred} />
         <Card label="Partner requests" value={partners} />
       </div>
+      <section className="grid gap-4 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-semibold">Capacity</h2>
+          <span className="text-xs text-muted">Daily email cap is set by EMAIL_DAILY_CAP (now {cap}); raise it after upgrading the email plan.</span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-1.5">
+            <span className="text-xs text-muted">Emails sent today (UTC)</span>
+            <span className="num text-2xl font-bold">
+              {emailsToday} <span className="text-base font-medium text-muted">/ {cap}</span>
+            </span>
+            <span className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+              <span className={`block h-full rounded-full ${emailsToday >= cap ? "bg-accent" : "bg-primary"}`} style={{ width: `${Math.min(100, (emailsToday / cap) * 100)}%` }} />
+            </span>
+          </div>
+          <div className="grid content-start gap-1.5">
+            <span className="text-xs text-muted">Emails waiting to be sent</span>
+            <span className={`num text-2xl font-bold ${pending ? "text-accent" : ""}`}>{pending}</span>
+            {pending > 0 && (
+              <form action={sendPending}>
+                <button className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-onprimary">Send now (up to 50)</button>
+              </form>
+            )}
+            {sentPending != null && <span className="text-xs text-muted">Sent {sentPending}; {leftPending} still waiting.</span>}
+          </div>
+          <div className="grid content-start gap-1.5">
+            <span className="text-xs text-muted">Blocked attempts today (too many from one connection)</span>
+            <span className="num text-2xl font-bold">{blockedToday}</span>
+          </div>
+        </div>
+      </section>
       <section className="grid gap-3 rounded-3xl bg-card p-5 ring-1 ring-line/60">
         <h2 className="font-semibold">Where sign-ups come from (utm_source)</h2>
         <table className="text-sm">

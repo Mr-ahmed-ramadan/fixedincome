@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, isAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { adminSessionValue, checkPassword } from "@/lib/tokens";
+import { sendPendingEmails } from "@/lib/waitlist";
 import { CHANNEL_STATUSES, TASK_STATUSES, channelSchema, nextStatus, quoteSchema, taskSchema, taskUpdateSchema } from "@/lib/validation";
 
 export async function login(formData: FormData) {
@@ -96,4 +97,11 @@ export async function updateChannel(formData: FormData) {
   const parsed = channelSchema.safeParse(Object.fromEntries(formData));
   if (parsed.success) await prisma.marketingChannel.update({ where: { key: String(formData.get("key")) }, data: parsed.data });
   toMarketing();
+}
+
+// --- Queued emails (daily cap reached or provider error)
+export async function sendPending() {
+  if (!(await isAdmin())) redirect("/admin");
+  const { sent, left } = await sendPendingEmails(50);
+  redirect(`/admin?sentPending=${sent}&leftPending=${left}`);
 }

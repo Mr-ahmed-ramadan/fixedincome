@@ -212,6 +212,7 @@ const en = {
       email: "Please enter a valid email address.",
       phone: "Please enter a valid mobile number.",
       generic: "Something went wrong. Please try again.",
+      rate: "Too many attempts from this connection. Please wait a few minutes and try again.",
     },
   },
   partners: {
@@ -242,6 +243,7 @@ const en = {
       name: "Please enter your name.",
       email: "Please enter a valid email address.",
       generic: "Something went wrong. Please try again.",
+      rate: "Too many attempts from this connection. Please wait a few minutes and try again.",
     },
   },
   faq: {
@@ -579,6 +581,7 @@ const ar: Dictionary = {
       email: "من فضلك اكتب بريدًا إلكترونيًا صحيحًا.",
       phone: "من فضلك اكتب رقم موبايل صحيحًا.",
       generic: "حدث خطأ ما. حاول مرة أخرى.",
+      rate: "محاولات كثيرة من نفس الاتصال. انتظر بضع دقائق ثم حاول مرة أخرى.",
     },
   },
   partners: {
@@ -609,6 +612,7 @@ const ar: Dictionary = {
       name: "من فضلك اكتب اسمك.",
       email: "من فضلك اكتب بريدًا إلكترونيًا صحيحًا.",
       generic: "حدث خطأ ما. حاول مرة أخرى.",
+      rate: "محاولات كثيرة من نفس الاتصال. انتظر بضع دقائق ثم حاول مرة أخرى.",
     },
   },
   faq: {

@@ -31,6 +31,10 @@ async function loadQuotes(): Promise<(Quote & { couponRatePct: number | null; ma
     return await prisma.yieldQuote.findMany({ where: { active: true }, orderBy: [{ currency: "asc" }, { sortOrder: "asc" }] });
   } catch (e) {
     console.error("Could not load yields", e);
+    // While the site is running, throwing keeps the last good cached page (Next.js
+    // doesn't replace it with a failed render), so a database outage never shows an
+    // empty rates table. During a build, render without rates rather than fail.
+    if (process.env.NEXT_PHASE !== "phase-production-build") throw e;
     return [];
   }
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { partnerAckEmail } from "@/lib/email-templates";
 import { CAL_URL } from "@/lib/site";
+import { allowFormSubmit, takeEmailBudget } from "@/lib/limits";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/locale";
 import { firstErrorField, joinSchema, note as noteSchema, partnerSchema, phoneOnlySchema } from "@/lib/validation";
 import { completeGoogleMember, joinWithEmail } from "@/lib/waitlist";
@@ -29,6 +30,12 @@ function localeOf(formData: FormData): Locale {
   return isLocale(v) ? v : DEFAULT_LOCALE;
 }
 
+/** The visitor's network address (Vercel puts the real one first). */
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "unknown").trim();
+}
+
 /** Bots fill every field; people never see this one. */
 function isBot(formData: FormData) {
   return String(formData.get("website") ?? "").length > 0;
@@ -47,6 +54,7 @@ export async function joinAction(_prev: FormState, formData: FormData): Promise<
   if (isBot(formData)) return { status: "sent", email: parsed.data.email };
 
   try {
+    if (!(await allowFormSubmit("join", await clientIp()))) return { status: "error", field: "rate", values };
     const jar = await cookies();
     await joinWithEmail({
       ...parsed.data,
@@ -75,12 +83,16 @@ export async function partnerAction(_prev: FormState, formData: FormData): Promi
   if (isBot(formData)) return { status: "sent" };
 
   try {
+    if (!(await allowFormSubmit("partner", await clientIp()))) return { status: "error", field: "rate", values };
     const locale = localeOf(formData);
     // Saved for the admin panel; the partner gets an acknowledgement (nothing is forwarded anywhere).
     const request = await prisma.partnerRequest.create({ data: { ...parsed.data, locale } });
-    await sendEmail({ to: request.email, ...partnerAckEmail(locale, request.name, request.institution, CAL_URL) }).catch((e) =>
-      console.error("partner acknowledgement failed", e),
-    );
+    // The request is what matters; the acknowledgement is skipped if today's email budget is used up.
+    if (await takeEmailBudget()) {
+      await sendEmail({ to: request.email, ...partnerAckEmail(locale, request.name, request.institution, CAL_URL) }).catch((e) =>
+        console.error("partner acknowledgement failed", e),
+      );
+    }
     return { status: "sent", email: request.email };
   } catch (e) {
     console.error("partnerAction failed", e);

@@ -19,6 +19,8 @@ model WaitlistUser {
   provider        String    @default("email") // email | google
   emailVerifiedAt DateTime?
   welcomeSentAt   DateTime?
+  verifySentAt    DateTime? // last confirmation email actually sent (throttles repeat sends)
+  pendingEmail    String? // VERIFY | WELCOME when that email couldn't be sent yet (daily cap or provider error)
   unsubscribedAt  DateTime? // set by the unsubscribe link in our emails
   note            String? // optional message left when joining (read in /admin)
   referralCode    String    @unique
@@ -34,6 +36,7 @@ model WaitlistUser {
 
   @@index([referredById])
   @@index([createdAt])
+  @@index([pendingEmail])
 }
 
 /// A broker, bank or other institution asking for an introductory call.
@@ -117,4 +120,11 @@ model MarketingTask {
   updatedAt DateTime  @updatedAt
 
   @@index([week, sortOrder])
+}
+
+/// Fixed-window counters for rate limits and the daily email budget.
+model RateCounter {
+  key     String   @id // e.g. "join:ip:1.2.3.4", "email:2026-10-23"
+  count   Int
+  resetAt DateTime
 }
