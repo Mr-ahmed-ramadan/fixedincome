@@ -19,6 +19,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     ["yields", "Yields"],
     ["waitlist", "Waitlist"],
     ["partners", "Partners"],
+    ["brand", "Brand"],
   ] as const;
 
   return (
@@ -40,6 +41,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
       {tab === "waitlist" && <Waitlist />}
       {tab === "partners" && <Partners />}
       {tab === "overview" && <Overview />}
+      {tab === "brand" && <Brand />}
     </div>
   );
 }
@@ -240,5 +242,90 @@ async function Partners() {
         </article>
       ))}
     </section>
+  );
+}
+
+/** Brand kit: logo files, social images, colours and fonts, ready to download for posts and decks. */
+const BRAND_FILES: { file: string; label: string; use: string; dark?: boolean }[] = [
+  { file: "/brand/agyal-lockup-en.png", label: "Logo, English", use: "Websites, documents, light backgrounds" },
+  { file: "/brand/agyal-lockup-ar.png", label: "Logo, Arabic", use: "Arabic posts and documents" },
+  { file: "/brand/agyal-lockup-en-white.png", label: "Logo, English (white)", use: "Dark or photo backgrounds", dark: true },
+  { file: "/brand/agyal-lockup-ar-white.png", label: "Logo, Arabic (white)", use: "Dark or photo backgrounds", dark: true },
+  { file: "/brand/agyal-mark.svg", label: "Mark only (SVG)", use: "Favicons, small spaces, print" },
+  { file: "/brand/agyal-mark-white.svg", label: "Mark only, white (SVG)", use: "On dark backgrounds", dark: true },
+  { file: "/brand/agyal-app-icon.svg", label: "App icon (SVG)", use: "App stores, rounded icons" },
+  { file: "/brand/agyal-profile-1024.png", label: "Profile picture 1024×1024", use: "Instagram, Facebook, LinkedIn, X, WhatsApp" },
+  { file: "/og/og-en.png", label: "Link preview, English (1200×630)", use: "Shown when agyal.net/en is shared" },
+  { file: "/og/og-ar.png", label: "Link preview, Arabic (1200×630)", use: "Shown when agyal.net/ar is shared" },
+];
+const BRAND_COLOURS = [
+  ["Lapis (primary)", "#1D47A3"],
+  ["Carnelian (accent)", "#D0643A"],
+  ["Ink (text)", "#0F1630"],
+  ["Paper (background)", "#F4F5FA"],
+  ["Muted (secondary text)", "#5D6478"],
+] as const;
+
+function Brand() {
+  return (
+    <div className="grid gap-6">
+      <section className="grid gap-2 rounded-3xl bg-card p-6 ring-1 ring-line/60">
+        <h2 className="text-lg font-semibold">Brand kit</h2>
+        <p className="text-sm text-muted">
+          Logo, colours and fonts for social posts, decks and partner documents. Click a file to open it, or use Download.
+          The original brand board (logo options and rationale) is at{" "}
+          <a className="text-primary underline" href="https://claude.ai/artifact/VaZsvyn5Dg7UwdquMcngFz" target="_blank" rel="noreferrer">
+            the brand board
+          </a>
+          .
+        </p>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {BRAND_FILES.map((f) => (
+          <figure key={f.file} className="grid gap-3 rounded-3xl bg-card p-4 ring-1 ring-line/60">
+            <a href={f.file} target="_blank" rel="noreferrer" className={`block h-36 overflow-hidden rounded-2xl p-4 ${f.dark ? "bg-ink" : "bg-paper"}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={f.file} alt={f.label} className="h-full w-full object-contain" />
+            </a>
+            <figcaption className="grid gap-1 text-sm">
+              <span className="font-semibold">{f.label}</span>
+              <span className="text-muted">{f.use}</span>
+              <a href={f.file} download className="w-fit text-primary underline">
+                Download
+              </a>
+            </figcaption>
+          </figure>
+        ))}
+      </section>
+
+      <section className="grid gap-4 rounded-3xl bg-card p-6 ring-1 ring-line/60">
+        <h2 className="text-lg font-semibold">Colours</h2>
+        <div className="grid gap-3 sm:grid-cols-5">
+          {BRAND_COLOURS.map(([name, hex]) => (
+            <div key={hex} className="grid gap-2">
+              <span className="h-16 rounded-2xl ring-1 ring-line" style={{ background: hex }} />
+              <span className="text-sm font-semibold">{name}</span>
+              <span className="select-all font-mono text-xs text-muted">{hex}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-2 rounded-3xl bg-card p-6 text-sm ring-1 ring-line/60">
+        <h2 className="text-lg font-semibold">Fonts</h2>
+        <p>
+          <span className="font-semibold">English:</span> SF Pro (Apple system font); use Inter or Helvetica where SF isn&apos;t available.
+        </p>
+        <p>
+          <span className="font-semibold">Arabic:</span>{" "}
+          <a className="text-primary underline" href="https://fonts.google.com/specimen/IBM+Plex+Sans+Arabic" target="_blank" rel="noreferrer">
+            IBM Plex Sans Arabic
+          </a>{" "}
+          (free, Google Fonts).
+        </p>
+        <p className="text-muted">Numbers: always Western digits (24.15%) in both languages.</p>
+      </section>
+    </div>
   );
 }

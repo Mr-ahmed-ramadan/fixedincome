@@ -32,7 +32,7 @@ export function Header({ t, locale, switchHref }: { t: Dictionary; locale: Local
             href={switchHref}
             hrefLang={other}
             aria-label={t.nav.switchLabel}
-            className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-ink/80 transition-colors hover:bg-ink/5 hover:text-ink sm:block"
+            className="rounded-full px-3 py-1.5 text-sm font-semibold text-ink/80 ring-1 ring-line transition-colors hover:bg-ink/5 hover:text-ink"
           >
             {t.nav.switchTo}
           </a>
