@@ -3,6 +3,7 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/lib/locale";
 import { Wordmark } from "./logo";
 import { MobileNav } from "./mobile-nav";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Header({ t, locale, switchHref }: { t: Dictionary; locale: Locale; switchHref: string }) {
   const links = (
@@ -28,6 +29,7 @@ export function Header({ t, locale, switchHref }: { t: Dictionary; locale: Local
           ))}
         </nav>
         <div className="ms-auto flex items-center gap-1.5 md:ms-0 md:gap-2">
+          <ThemeToggle labels={t.nav.theme} />
           <a
             href={switchHref}
             hrefLang={other}

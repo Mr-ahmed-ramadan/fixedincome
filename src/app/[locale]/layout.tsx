@@ -1,3 +1,4 @@
+import { THEME_SCRIPT } from "@/components/theme-toggle";
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { notFound } from "next/navigation";
@@ -52,8 +53,10 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
   return (
-    <html lang={locale} dir={t.dir} className={plexArabic.variable}>
+    <html lang={locale} dir={t.dir} className={plexArabic.variable} suppressHydrationWarning>
       <body>
+        {/* Before anything paints: apply the saved light/dark choice. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} suppressHydrationWarning />
         {children}
         <RevealRoot />
       </body>

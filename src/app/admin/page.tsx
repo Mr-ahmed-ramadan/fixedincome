@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
 import { isAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
@@ -33,7 +34,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             </Link>
           ))}
         </nav>
-        <form action={logout} className="ms-auto">
+        <span className="ms-auto">
+          <ThemeToggle labels={{ auto: "Theme: auto", light: "Theme: light", dark: "Theme: dark" }} />
+        </span>
+        <form action={logout}>
           <button className="text-sm text-muted hover:text-ink">Sign out</button>
         </form>
       </header>
@@ -284,7 +288,7 @@ function Brand() {
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {BRAND_FILES.map((f) => (
           <figure key={f.file} className="grid gap-3 rounded-3xl bg-card p-4 ring-1 ring-line/60">
-            <a href={f.file} target="_blank" rel="noreferrer" className={`block h-36 overflow-hidden rounded-2xl p-4 ${f.dark ? "bg-ink" : "bg-paper"}`}>
+            <a href={f.file} target="_blank" rel="noreferrer" className={`block h-36 overflow-hidden rounded-2xl p-4 ${f.dark ? "bg-[#0F1630]" : "bg-[#F4F5FA]"}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={f.file} alt={f.label} className="h-full w-full object-contain" />
             </a>

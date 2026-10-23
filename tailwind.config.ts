@@ -5,6 +5,11 @@ const token = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
+  // `dark:` follows the device, unless the visitor picked a theme (data-theme on <html>).
+  darkMode: [
+    "variant",
+    ["@media (prefers-color-scheme: dark) { &:where(:root:not([data-theme=light]) *) }", "&:where([data-theme=dark] *)"],
+  ],
   theme: {
     extend: {
       colors: {
