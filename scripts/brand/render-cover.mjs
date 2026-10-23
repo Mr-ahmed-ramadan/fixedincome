@@ -27,19 +27,18 @@ body{background:#1D47A3;position:relative;color:#fff}
 .ar{font-family:'IBM Plex Sans Arabic',sans-serif}
 .en{font-family:'Inter',sans-serif}
 .glow{position:absolute;border-radius:50%}
-.band{position:absolute;left:0;right:0;top:150px;height:624px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:40px 0 44px}
+.band{position:absolute;left:0;right:0;top:150px;height:624px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:28px 0 26px}
 .lockup{display:flex;align-items:center;gap:18px;font-size:40px;font-weight:700}
 .lockup svg{width:60px;height:60px}
 .cols{display:grid;grid-template-columns:560px 2px 560px;gap:64px;align-items:center}
-.rule{height:220px;background:rgba(255,255,255,.28);border-radius:2px}
+.rule{height:200px;background:rgba(255,255,255,.28);border-radius:2px}
 .col{display:grid;gap:22px}
 .h{font-size:68px;font-weight:700}
 .h.ar{line-height:1.3}
 .h.en{line-height:1.12;letter-spacing:-0.03em}
 .sub{font-size:27px;font-weight:500;opacity:.85}
-.cta{display:flex;align-items:center;gap:28px;font-size:28px}
-.pill{background:#fff;color:#1D47A3;border-radius:999px;padding:14px 32px;font-weight:700;display:flex;gap:14px;align-items:center}
-.dot{opacity:.4}
+.cta{display:flex;flex-direction:column;align-items:center;gap:14px;font-size:26px}
+.pill{background:#fff;color:#1D47A3;border-radius:999px;padding:12px 44px;font-weight:700;display:flex;flex-direction:column;align-items:center;line-height:1.25}
 </style></head><body>
 <div class="glow" style="right:-140px;top:-220px;width:640px;height:640px;background:radial-gradient(circle,rgba(208,100,58,.45),transparent 65%)"></div>
 <div class="glow" style="left:-220px;bottom:-300px;width:800px;height:800px;background:radial-gradient(circle,rgba(123,159,240,.55),transparent 65%)"></div>
@@ -57,7 +56,7 @@ body{background:#1D47A3;position:relative;color:#fff}
     </div>
   </div>
   <div class="cta">
-    <span class="pill"><span class="en">Join the waitlist</span><span class="dot">·</span><span class="ar">انضم لقائمة الانتظار</span></span>
+    <span class="pill"><span class="en">Join the waitlist</span><span class="ar">انضم لقائمة الانتظار</span></span>
     <span class="en" style="font-weight:600;opacity:.9">agyal.net</span>
   </div>
 </div>
