@@ -4,7 +4,9 @@ import { isAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { CURRENCIES, INSTRUMENTS } from "@/lib/yields";
 import { Wordmark } from "@/components/logo";
-import { deleteQuote, login, logout, saveQuote } from "./actions";
+import { CopyButton } from "@/components/copy-button";
+import { TASK_KINDS, trackedLink } from "@/lib/validation";
+import { addTask, cycleChannelStatus, cycleTaskStatus, deleteQuote, deleteTask, login, logout, saveQuote, updateChannel, updateTask } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     ["yields", "Yields"],
     ["waitlist", "Waitlist"],
     ["partners", "Partners"],
+    ["marketing", "Marketing"],
     ["brand", "Brand"],
   ] as const;
 
@@ -46,6 +49,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
       {tab === "partners" && <Partners />}
       {tab === "overview" && <Overview />}
       {tab === "brand" && <Brand />}
+      {tab === "marketing" && <Marketing error={sp.error} />}
     </div>
   );
 }
@@ -329,6 +333,224 @@ function Brand() {
           (free, Google Fonts).
         </p>
         <p className="text-muted">Numbers: always Western digits (24.15%) in both languages.</p>
+      </section>
+    </div>
+  );
+}
+
+// --- Marketing: launch plan, channels and where sign-ups come from.
+const WEEK_LABEL = ["Week 0 · Set up", "Week 1 · First content", "Week 2", "Week 3", "Week 4"];
+const STATUS_STYLE: Record<string, string> = {
+  TODO: "bg-ink/5 text-muted",
+  DOING: "bg-accent/15 text-accent",
+  DONE: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  CREATED: "bg-accent/15 text-accent",
+  ACTIVE: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+};
+const STATUS_LABEL: Record<string, string> = { TODO: "To do", DOING: "In progress", DONE: "Done", CREATED: "Created", ACTIVE: "Active" };
+
+function StatusButton({ action, name, value, status }: { action: (f: FormData) => Promise<void>; name: string; value: string; status: string }) {
+  return (
+    <form action={action}>
+      <input type="hidden" name={name} value={value} />
+      <button title="Click to change status" className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[status] ?? ""}`}>
+        {status === "DONE" ? "✓ " : ""}
+        {STATUS_LABEL[status] ?? status}
+      </button>
+    </form>
+  );
+}
+
+async function Marketing({ error }: { error?: string }) {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+  const [channels, tasks, total, verified, lastWeek, bySource, verifiedBySource] = await Promise.all([
+    prisma.marketingChannel.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.marketingTask.findMany({ orderBy: [{ week: "asc" }, { sortOrder: "asc" }] }),
+    prisma.waitlistUser.count(),
+    prisma.waitlistUser.count({ where: { emailVerifiedAt: { not: null } } }),
+    prisma.waitlistUser.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.waitlistUser.groupBy({ by: ["utmSource"], _count: { _all: true } }),
+    prisma.waitlistUser.groupBy({ by: ["utmSource"], where: { emailVerifiedAt: { not: null } }, _count: { _all: true } }),
+  ]);
+  const count = (rows: { utmSource: string | null; _count: { _all: number } }[], key: string | null) =>
+    rows.find((r) => r.utmSource === key)?._count._all ?? 0;
+  const known = new Set(channels.map((c) => c.key));
+  const other = bySource.filter((r) => r.utmSource && !known.has(r.utmSource)).reduce((n, r) => n + r._count._all, 0);
+  const weeks = [...new Set(tasks.map((t) => t.week))].sort((a, b) => a - b);
+  const done = tasks.filter((t) => t.status === "DONE").length;
+
+  return (
+    <div className="grid gap-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card label="Waitlist" value={total} />
+        <Card label="Confirmed email" value={verified} hint={total ? `${Math.round((verified / total) * 100)}%` : undefined} />
+        <Card label="Joined this week" value={lastWeek} />
+        <Card label="Plan progress" value={`${done}/${tasks.length}`} hint="tasks done" />
+      </div>
+
+      <section className="grid gap-3 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-semibold">Channels</h2>
+          <span className="text-xs text-muted">Put the tagged link in each bio and post; sign-ups from it are counted here.</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] text-sm">
+            <thead className="text-xs text-muted">
+              <tr>
+                <th className="py-2 text-start font-medium">Channel</th>
+                <th className="py-2 text-start font-medium">Status</th>
+                <th className="py-2 text-start font-medium">Handle · profile URL</th>
+                <th className="py-2 text-start font-medium">Tagged link</th>
+                <th className="py-2 text-end font-medium">Sign-ups</th>
+                <th className="py-2 text-end font-medium">Confirmed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {channels.map((c) => (
+                <tr key={c.key} className="border-t border-line align-top">
+                  <td className="py-3 pe-3">
+                    <div className="font-semibold">{c.name}</div>
+                    <div className="max-w-[16rem] text-xs text-muted">{c.audience}</div>
+                  </td>
+                  <td className="py-3 pe-3">
+                    <StatusButton action={cycleChannelStatus} name="key" value={c.key} status={c.status} />
+                  </td>
+                  <td className="py-3 pe-3">
+                    <form action={updateChannel} className="flex flex-wrap gap-1.5">
+                      <input type="hidden" name="key" value={c.key} />
+                      <input name="handle" defaultValue={c.handle ?? ""} placeholder="@agyal" className={`${inputCls} w-28`} />
+                      <input name="url" defaultValue={c.url ?? ""} placeholder="https://…" className={`${inputCls} w-44`} />
+                      <button className="rounded-xl px-2 text-xs font-semibold text-primary hover:underline">Save</button>
+                      {c.url && (
+                        <a href={c.url} target="_blank" rel="noreferrer" className="self-center text-xs text-primary underline">
+                          Open
+                        </a>
+                      )}
+                    </form>
+                  </td>
+                  <td className="py-3 pe-3">
+                    <div className="flex items-center gap-2">
+                      <code className="max-w-[14rem] truncate text-xs text-muted">{trackedLink(c.key).replace("https://", "")}</code>
+                      <CopyButton text={trackedLink(c.key)} />
+                    </div>
+                  </td>
+                  <td className="num py-3 text-end font-semibold">{count(bySource, c.key)}</td>
+                  <td className="num py-3 text-end">{count(verifiedBySource, c.key)}</td>
+                </tr>
+              ))}
+              <tr className="border-t border-line text-muted">
+                <td className="py-3" colSpan={4}>
+                  Direct / untagged{other ? ` · other tags: ${other}` : ""}
+                </td>
+                <td className="num py-3 text-end font-semibold">{count(bySource, null)}</td>
+                <td className="num py-3 text-end">{count(verifiedBySource, null)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="grid gap-5 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-semibold">30-day launch plan</h2>
+          <span className="text-xs text-muted">Click a status to move it on: To do → In progress → Done. Paste the posted link when a post goes live.</span>
+        </div>
+        {weeks.map((w) => {
+          const list = tasks.filter((t) => t.week === w);
+          const wDone = list.filter((t) => t.status === "DONE").length;
+          return (
+            <div key={w} className="grid gap-2">
+              <div className="flex items-center gap-3">
+                <h3 className="text-sm font-semibold">{WEEK_LABEL[w] ?? `Week ${w}`}</h3>
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/5">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${list.length ? (wDone / list.length) * 100 : 0}%` }} />
+                </div>
+                <span className="num text-xs text-muted">
+                  {wDone}/{list.length}
+                </span>
+              </div>
+              <ul className="grid divide-y divide-line rounded-2xl ring-1 ring-line/60">
+                {list.map((t) => (
+                  <li key={t.id} className={`grid gap-2 p-3 md:grid-cols-[auto_1fr_auto] md:items-start ${t.status === "DONE" ? "opacity-60" : ""}`}>
+                    <StatusButton action={cycleTaskStatus} name="id" value={t.id} status={t.status} />
+                    <div className="grid gap-1">
+                      <span className={`font-medium ${t.status === "DONE" ? "line-through" : ""}`}>{t.title}</span>
+                      <span className="flex flex-wrap gap-1.5 text-xs text-muted">
+                        <span className={`rounded px-1.5 font-semibold ${t.owner === "CLAUDE" ? "bg-primary/10 text-primary" : "bg-accent/15 text-accent"}`}>
+                          {t.owner === "CLAUDE" ? "Claude" : "You"}
+                        </span>
+                        <span>{t.kind.toLowerCase()}</span>
+                        {t.channel !== "all" && <span>· {channels.find((c) => c.key === t.channel)?.name ?? t.channel}</span>}
+                        {t.dueDate && <span>· due {t.dueDate.toISOString().slice(0, 10)}</span>}
+                        {t.link && (
+                          <a href={t.link} target="_blank" rel="noreferrer" className="text-primary underline">
+                            · link
+                          </a>
+                        )}
+                      </span>
+                      {t.notes && <span className="text-xs text-ink/70">{t.notes}</span>}
+                    </div>
+                    <details className="text-xs">
+                      <summary className="cursor-pointer text-primary">Edit</summary>
+                      <form action={updateTask} className="mt-2 grid w-64 gap-1.5">
+                        <input type="hidden" name="id" value={t.id} />
+                        <input name="link" defaultValue={t.link ?? ""} placeholder="Posted link" className={inputCls} />
+                        <textarea name="notes" defaultValue={t.notes ?? ""} placeholder="Notes" rows={2} className={inputCls} />
+                        <button className="rounded-xl bg-primary px-3 py-1.5 font-semibold text-onprimary">Save</button>
+                      </form>
+                      <form action={deleteTask} className="mt-1.5">
+                        <input type="hidden" name="id" value={t.id} />
+                        <button className="text-muted hover:text-accent">Delete task</button>
+                      </form>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </section>
+
+      <section className="grid gap-3 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+        <h2 className="font-semibold">Add a task</h2>
+        {error === "task" && <p className="text-sm font-medium text-accent">Please give the task a title.</p>}
+        <form action={addTask} className="grid gap-2 sm:grid-cols-[5rem_1fr_9rem_8rem_7rem_9rem_auto] sm:items-end">
+          <Field label="Week">
+            <input name="week" type="number" min={0} max={52} defaultValue={1} className={inputCls} />
+          </Field>
+          <Field label="Task">
+            <input name="title" required placeholder="e.g. Post explainer 5 on TikTok" className={inputCls} />
+          </Field>
+          <Field label="Channel">
+            <select name="channel" className={inputCls} defaultValue="all">
+              <option value="all">All</option>
+              {channels.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Type">
+            <select name="kind" className={inputCls} defaultValue="CONTENT">
+              {TASK_KINDS.map((k) => (
+                <option key={k} value={k}>
+                  {k.toLowerCase()}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Owner">
+            <select name="owner" className={inputCls} defaultValue="YOU">
+              <option value="YOU">You</option>
+              <option value="CLAUDE">Claude</option>
+            </select>
+          </Field>
+          <Field label="Due">
+            <input name="dueDate" type="date" className={inputCls} />
+          </Field>
+          <button className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-onprimary">Add</button>
+        </form>
       </section>
     </div>
   );

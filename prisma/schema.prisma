@@ -87,3 +87,34 @@ model AppMeta {
   key   String @id
   value String
 }
+
+/// A social channel in the launch plan (shown in /admin → Marketing).
+model MarketingChannel {
+  key       String   @id // facebook | instagram | tiktok | whatsapp | youtube | linkedin | x
+  name      String
+  handle    String?
+  url       String?
+  status    String   @default("TODO") // TODO | CREATED | ACTIVE
+  audience  String?
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// One step of the marketing launch plan.
+model MarketingTask {
+  id        String    @id @default(cuid())
+  week      Int // 0 = setup, then 1–4
+  title     String
+  channel   String    @default("all")
+  kind      String    @default("CONTENT") // SETUP | CONTENT | OUTREACH | REVIEW
+  owner     String    @default("YOU") // YOU | CLAUDE
+  status    String    @default("TODO") // TODO | DOING | DONE
+  dueDate   DateTime?
+  link      String?
+  notes     String?
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([week, sortOrder])
+}

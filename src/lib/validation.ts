@@ -78,3 +78,47 @@ export const quoteSchema = z.object({
 export function firstErrorField(error: z.ZodError): string {
   return String(error.issues[0]?.path[0] ?? "generic");
 }
+
+// --- Marketing plan (/admin → Marketing)
+export const TASK_STATUSES = ["TODO", "DOING", "DONE"] as const;
+export const TASK_KINDS = ["SETUP", "CONTENT", "OUTREACH", "REVIEW"] as const;
+export const CHANNEL_STATUSES = ["TODO", "CREATED", "ACTIVE"] as const;
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => (v ? v : null));
+
+export const taskSchema = z.object({
+  week: z.coerce.number().int().min(0).max(52),
+  title: z.string().trim().min(1).max(200),
+  channel: z.string().trim().min(1).max(20).default("all"),
+  kind: z.enum(TASK_KINDS),
+  owner: z.enum(["YOU", "CLAUDE"]),
+  dueDate: z
+    .string()
+    .optional()
+    .transform((v) => (v ? new Date(`${v}T12:00:00Z`) : null)),
+  link: optionalText(500),
+  notes: optionalText(2000),
+});
+
+export const taskUpdateSchema = z.object({
+  link: optionalText(500),
+  notes: optionalText(2000),
+});
+
+export const channelSchema = z.object({
+  handle: optionalText(80),
+  url: optionalText(300),
+});
+
+/** The tagged agyal.net link to put in a channel's bio and posts. */
+export function trackedLink(channel: string, locale: "ar" | "en" = "ar") {
+  return `https://agyal.net/${locale}?utm_source=${encodeURIComponent(channel)}&utm_medium=social`;
+}
+
+export const nextStatus = <T extends string>(list: readonly T[], current: string): T => list[(list.indexOf(current as T) + 1) % list.length];

@@ -156,4 +156,72 @@ async function main() {
   console.log(version === start ? `Yields up to date (v${version}).` : `Yields seeded from v${start} to v${version}.`);
 }
 
-main().finally(() => prisma.$disconnect());
+// --- Marketing launch plan (/admin → Marketing). Its own version key; seeded once, then edited in admin.
+const MKT_KEY = "marketingSeedVersion";
+
+const channels = [
+  { key: "facebook", name: "Facebook", audience: "Biggest reach in Egypt, all ages; longer posts and groups" },
+  { key: "instagram", name: "Instagram", audience: "Carousels and Reels; younger, urban" },
+  { key: "tiktok", name: "TikTok", audience: "Short explainers; cheapest attention" },
+  { key: "whatsapp", name: "WhatsApp Channel", audience: "Weekly rates update; Egyptians at home and abroad" },
+  { key: "youtube", name: "YouTube", audience: "Shorts (reuse TikToks) and longer explainers that rank in search" },
+  { key: "linkedin", name: "LinkedIn", audience: "Founding partners (brokers, banks, asset managers) and credibility" },
+  { key: "x", name: "X", audience: "Finance and news crowd; rates only" },
+];
+
+// Week 0 starts Monday 26 Oct 2026; each week's tasks are due by its Friday.
+const due = (week: number, dayOffset = 4) => day(new Date(Date.UTC(2026, 9, 26 + week * 7 + dayOffset)).toISOString().slice(0, 10));
+type T = { week: number; title: string; channel?: string; kind: string; owner: "YOU" | "CLAUDE"; notes?: string };
+const plan: T[] = [
+  // Week 0: setup
+  { week: 0, kind: "SETUP", owner: "YOU", title: "Reserve @agyal (or the closest handle) on every channel", notes: "Same handle everywhere; add it to the Channels table above." },
+  { week: 0, kind: "SETUP", owner: "CLAUDE", title: "Write bios for every channel (Arabic + English, colloquial)" },
+  { week: 0, kind: "SETUP", owner: "YOU", title: "Add profile picture, cover and bio with the tagged agyal.net link", notes: "Profile picture and covers: Brand tab. Links: copy from the Channels table." },
+  { week: 0, kind: "SETUP", owner: "YOU", title: "Create the WhatsApp Channel", channel: "whatsapp" },
+  { week: 0, kind: "SETUP", owner: "YOU", title: "Create the YouTube channel", channel: "youtube" },
+  { week: 0, kind: "SETUP", owner: "YOU", title: "Optional: connect TikTok (Higgsfield) and Facebook/Instagram/LinkedIn (Make) so posts can be scheduled" },
+  // Week 1: first content
+  { week: 1, kind: "CONTENT", owner: "CLAUDE", title: "Brand templates: weekly rates post, carousel, story" },
+  { week: 1, kind: "CONTENT", owner: "CLAUDE", title: "Egyptian-Arabic voice samples (check cost first)", notes: "Fallback: no voice, bold Arabic subtitles + music." },
+  { week: 1, kind: "CONTENT", owner: "CLAUDE", title: "Explainer 1 (30s): What is a T-bill? «يعني إيه أذون خزانة؟»", channel: "tiktok" },
+  { week: 1, kind: "CONTENT", owner: "YOU", title: "Publish the launch post «سندات مصر، في جيبك» on all channels" },
+  { week: 1, kind: "CONTENT", owner: "YOU", title: "Post this week's T-bill rates (after the CBE auction)", channel: "whatsapp" },
+  { week: 1, kind: "OUTREACH", owner: "CLAUDE", title: "Partner one-pager (PDF) and LinkedIn outreach message", channel: "linkedin" },
+  // Week 2
+  { week: 2, kind: "CONTENT", owner: "YOU", title: "Post this week's T-bill rates", channel: "whatsapp" },
+  { week: 2, kind: "CONTENT", owner: "CLAUDE", title: "Explainer 2: How do coupons work? (bonds pay twice a year)", channel: "tiktok" },
+  { week: 2, kind: "CONTENT", owner: "CLAUDE", title: "Carousel: T-bill vs bank certificate, after tax", channel: "instagram" },
+  { week: 2, kind: "OUTREACH", owner: "YOU", title: "Send the partner message to 10 brokers / banks", channel: "linkedin" },
+  { week: 2, kind: "REVIEW", owner: "YOU", title: "Weekly review: sign-ups by channel (funnel above); double down on the best one" },
+  // Week 3
+  { week: 3, kind: "CONTENT", owner: "YOU", title: "Post this week's T-bill rates", channel: "whatsapp" },
+  { week: 3, kind: "CONTENT", owner: "CLAUDE", title: "Explainer 3: Why bonds instead of a money market fund?", channel: "tiktok" },
+  { week: 3, kind: "CONTENT", owner: "CLAUDE", title: "Explainer for Egyptians abroad: dollar Eurobonds", channel: "facebook" },
+  { week: 3, kind: "CONTENT", owner: "CLAUDE", title: "Founding-partner video (60–90s)", channel: "linkedin" },
+  { week: 3, kind: "OUTREACH", owner: "YOU", title: "Send the partner message to 10 more; book calls", channel: "linkedin" },
+  { week: 3, kind: "REVIEW", owner: "YOU", title: "Weekly review: sign-ups by channel" },
+  // Week 4
+  { week: 4, kind: "CONTENT", owner: "YOU", title: "Post this week's T-bill rates", channel: "whatsapp" },
+  { week: 4, kind: "CONTENT", owner: "CLAUDE", title: "Referral push: «ادعُ صحابك» post + story using invite links" },
+  { week: 4, kind: "CONTENT", owner: "CLAUDE", title: "Explainer 4: What happens if I sell before maturity?", channel: "tiktok" },
+  { week: 4, kind: "REVIEW", owner: "YOU", title: "Month review with Claude: what worked, next month's plan" },
+];
+
+async function seedMarketing() {
+  const meta = await prisma.appMeta.findUnique({ where: { key: MKT_KEY } });
+  if (meta && Number(meta.value) >= 1) return;
+  for (const [i, c] of channels.entries()) {
+    await prisma.marketingChannel.upsert({ where: { key: c.key }, create: { ...c, sortOrder: i }, update: {} });
+  }
+  if ((await prisma.marketingTask.count()) === 0) {
+    await prisma.marketingTask.createMany({
+      data: plan.map((t, i) => ({ ...t, channel: t.channel ?? "all", dueDate: due(t.week), sortOrder: i })),
+    });
+  }
+  await prisma.appMeta.upsert({ where: { key: MKT_KEY }, create: { key: MKT_KEY, value: "1" }, update: { value: "1" } });
+  console.log("Marketing plan seeded.");
+}
+
+main()
+  .then(seedMarketing)
+  .finally(() => prisma.$disconnect());
