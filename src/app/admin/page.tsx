@@ -332,6 +332,12 @@ const BRAND_FILES: { file: string; label: string; use: string; dark?: boolean }[
   { file: "/og/og-en.png", label: "Link preview, English (1200×630)", use: "Shown when agyal.net/en is shared" },
   { file: "/og/og-ar.png", label: "Link preview, Arabic (1200×630)", use: "Shown when agyal.net/ar is shared" },
 ];
+const BRAND_MOTION: { file: string; label: string; use: string; tall?: boolean; poster?: string }[] = [
+  { file: "/brand/motion/agyal-logo-vertical-blue.mp4", label: "Vertical, with tagline (MP4, 5s)", use: "TikTok, Reels, Stories, YouTube Shorts (1080×1920)", tall: true, poster: "/brand/motion/agyal-logo-vertical-blue-poster.png" },
+  { file: "/brand/motion/agyal-logo-square-blue.mp4", label: "Square, blue (MP4, 4s)", use: "Facebook, Instagram and LinkedIn posts (1080×1080)" },
+  { file: "/brand/motion/agyal-logo-square-light.mp4", label: "Square, light (MP4, 4s)", use: "Light-themed posts and slides (1080×1080)" },
+  { file: "/brand/motion/agyal-logo-light.gif", label: "GIF (light)", use: "WhatsApp, presentations, email signatures" },
+];
 const BRAND_COLOURS = [
   ["Lapis (primary)", "#1D47A3"],
   ["Carnelian (accent)", "#D0643A"],
@@ -371,6 +377,32 @@ function Brand() {
             </figcaption>
           </figure>
         ))}
+      </section>
+
+      <section className="grid gap-4 rounded-3xl bg-card p-6 ring-1 ring-line/60">
+        <div className="grid gap-1">
+          <h2 className="text-lg font-semibold">Animated logo</h2>
+          <p className="text-sm text-muted">The rising bars, for the start or end of videos, Reels, TikToks and stories. The GIF works in WhatsApp and slides.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {BRAND_MOTION.map((m) => (
+            <figure key={m.file} className="grid content-start gap-2">
+              {m.file.endsWith(".gif") ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={m.file} alt={m.label} className="aspect-square w-full rounded-2xl object-cover ring-1 ring-line" />
+              ) : (
+                <video src={m.file} poster={m.poster} muted loop autoPlay playsInline className={`w-full rounded-2xl ring-1 ring-line ${m.tall ? "aspect-[9/16]" : "aspect-square"} object-cover`} />
+              )}
+              <figcaption className="grid gap-0.5 text-sm">
+                <span className="font-semibold">{m.label}</span>
+                <span className="text-muted">{m.use}</span>
+                <a href={m.file} download className="w-fit text-primary underline">
+                  Download
+                </a>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
 
       <section className="grid gap-4 rounded-3xl bg-card p-6 ring-1 ring-line/60">

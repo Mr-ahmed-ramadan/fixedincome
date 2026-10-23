@@ -19,7 +19,7 @@ export function Header({ t, locale, switchHref }: { t: Dictionary; locale: Local
     <header className="glass sticky top-0 z-40 border-b border-line/70">
       <div className="relative mx-auto flex h-14 max-w-site items-center gap-6 px-4 sm:px-6">
         <Link href={`/${locale}`} aria-label={t.brand}>
-          <Wordmark name={t.brand} />
+          <Wordmark name={t.brand} animated />
         </Link>
         <nav className="hidden flex-1 items-center justify-center gap-7 text-sm text-ink/80 md:flex">
           {links.map(([href, label]) => (

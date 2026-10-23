@@ -21,10 +21,10 @@ export function LadderMark({ className, animated, title }: Props) {
   );
 }
 
-export function Wordmark({ name, className }: { name: string; className?: string }) {
+export function Wordmark({ name, className, animated }: { name: string; className?: string; animated?: boolean }) {
   return (
     <span className={`inline-flex items-center gap-2 font-bold text-ink ${className ?? ""}`}>
-      <LadderMark className="h-7 w-7" />
+      <LadderMark className="h-7 w-7" animated={animated} />
       <span className="text-lg tracking-wide">{name}</span>
     </span>
   );
