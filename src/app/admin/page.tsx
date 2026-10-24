@@ -10,7 +10,9 @@ import { emailDailyCap, keys, peek } from "@/lib/limits";
 import { milestones, statusOf } from "@/lib/milestones";
 import { CRON_LAST_KEY } from "@/lib/cron";
 import { CAL_URL, googleEnabled } from "@/lib/site";
-import { addTask, sendPending, toggleMilestone, cycleChannelStatus, cycleTaskStatus, deleteQuote, deleteTask, login, logout, saveQuote, updateChannel, updateTask } from "./actions";
+import { currentProgress, type Progress } from "@/lib/progress";
+import { getDictionary } from "@/i18n/dictionaries";
+import { addTask, saveProgress, sendPending, toggleMilestone, cycleChannelStatus, cycleTaskStatus, deleteQuote, deleteTask, login, logout, saveQuote, updateChannel, updateTask } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +44,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           ))}
         </nav>
         <span className="ms-auto">
-          <ThemeToggle labels={{ auto: "Theme: auto", light: "Theme: light", dark: "Theme: dark" }} />
+          <ThemeToggle labels={{ toDark: "Switch to dark mode", toLight: "Switch to light mode" }} />
         </span>
         <form action={logout}>
           <button className="text-sm text-muted hover:text-ink">Sign out</button>
@@ -83,6 +85,40 @@ function Card({ label, value, hint }: { label: string; value: string | number; h
   );
 }
 
+/** Where AGYAL is: drives the timeline on members' /account page, the welcome page and the welcome email. */
+function ProgressCard({ progress }: { progress: Progress }) {
+  const steps = getDictionary("en").timeline.steps;
+  return (
+    <section id="progress" className="grid gap-4 rounded-3xl bg-card p-5 ring-1 ring-line/60">
+      <div className="grid gap-1">
+        <h2 className="font-semibold">Progress members see</h2>
+        <p className="text-xs text-muted">Shown when members log in (My account), on the welcome page and in new welcome emails. Move the step forward as AGYAL progresses.</p>
+      </div>
+      <form action={saveProgress} className="grid gap-3">
+        <label className="grid gap-1 text-sm">
+          <span className="text-xs text-muted">Current step</span>
+          <select name="step" defaultValue={progress.step} className="field">
+            {steps.map((s, i) => (
+              <option key={s.t} value={i}>{`${i + 1}. ${s.t}`}</option>
+            ))}
+          </select>
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-sm">
+            <span className="text-xs text-muted">Latest update, English (optional)</span>
+            <textarea name="noteEn" rows={2} maxLength={500} defaultValue={progress.note.en} className="field" />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="text-xs text-muted">Latest update, Arabic (optional)</span>
+            <textarea name="noteAr" rows={2} maxLength={500} dir="rtl" defaultValue={progress.note.ar} className="field" />
+          </label>
+        </div>
+        <button className="w-fit rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-onprimary">Save progress</button>
+      </form>
+    </section>
+  );
+}
+
 async function Overview({ sentPending, leftPending }: { sentPending?: string; leftPending?: string }) {
   const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
   const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
@@ -97,6 +133,7 @@ async function Overview({ sentPending, leftPending }: { sentPending?: string; le
   ]);
   const lastRun = cronRow ? (JSON.parse(cronRow.value) as { at: string; sent: number; left: number }) : null;
   const cap = emailDailyCap();
+  const progress = await currentProgress();
   const [total, confirmed, lastWeek, partners, referred, sources] = await Promise.all([
     prisma.waitlistUser.count(),
     prisma.waitlistUser.count({ where: { emailVerifiedAt: { not: null } } }),
@@ -114,6 +151,7 @@ async function Overview({ sentPending, leftPending }: { sentPending?: string; le
         <Card label="Came via a friend" value={referred} />
         <Card label="Partner requests" value={partners} />
       </div>
+      <ProgressCard progress={progress} />
       <section className="grid gap-4 rounded-3xl bg-card p-5 ring-1 ring-line/60">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-semibold">Capacity</h2>
@@ -272,7 +310,7 @@ async function Waitlist() {
       <div className="overflow-x-auto rounded-3xl bg-card ring-1 ring-line/60">
         <table className="w-full min-w-[64rem] text-sm">
           <thead className="text-start text-xs text-muted">
-            <tr>{["Joined", "Name", "Email", "Mobile", "Lang", "Via", "Confirmed", "Friends", "Source", "Note"].map((h) => <th key={h} className="px-3 py-2 text-start font-medium">{h}</th>)}</tr>
+            <tr>{["Joined", "Name", "Email", "Mobile", "Lang", "Via", "Confirmed", "Last login", "Friends", "Source", "Note"].map((h) => <th key={h} className="px-3 py-2 text-start font-medium">{h}</th>)}</tr>
           </thead>
           <tbody>
             {users.map((u) => (
@@ -284,6 +322,7 @@ async function Waitlist() {
                 <td className="px-3 py-2">{u.locale}</td>
                 <td className="px-3 py-2">{u.provider}</td>
                 <td className="px-3 py-2">{u.emailVerifiedAt ? "Yes" : "No"}{u.unsubscribedAt ? " · unsubscribed" : ""}</td>
+                <td className="num whitespace-nowrap px-3 py-2">{u.lastLoginAt ? fmt(u.lastLoginAt) : ""}</td>
                 <td className="num px-3 py-2">{u._count.referrals}</td>
                 <td className="px-3 py-2">{[u.utmSource, u.utmCampaign].filter(Boolean).join(" / ")}</td>
                 <td className="max-w-xs whitespace-pre-wrap px-3 py-2 text-muted">{u.note}</td>

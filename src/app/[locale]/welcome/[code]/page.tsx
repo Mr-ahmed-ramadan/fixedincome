@@ -4,6 +4,7 @@ import { pageLocale, otherLocalePath } from "@/lib/page-locale";
 import { normalizeReferralCode } from "@/lib/referral";
 import { inviteUrl } from "@/lib/site";
 import { countReferrals } from "@/lib/waitlist";
+import { currentProgress } from "@/lib/progress";
 import { LadderMark } from "@/components/logo";
 import { ShareLink } from "@/components/share-link";
 import { Timeline } from "@/components/timeline";
@@ -18,7 +19,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
   const user = code ? await prisma.waitlistUser.findUnique({ where: { referralCode: code } }) : null;
   if (!user) notFound();
 
-  const friends = await countReferrals(user.id);
+  const [friends, progress] = await Promise.all([countReferrals(user.id), currentProgress()]);
   const firstName = user.name.split(" ")[0];
 
   return (
@@ -27,7 +28,8 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
       <h1 className="text-3xl font-bold sm:text-4xl">{t.welcome.title(firstName)}</h1>
       <p className="text-lg text-muted">{user.emailVerifiedAt ? t.welcome.sub : t.welcome.pending}</p>
       {!user.emailVerifiedAt && <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-ink/80">{t.join.spamHint}</p>}
-      <Timeline t={t.timeline} />
+      <Timeline t={t.timeline} current={progress.step} />
+      <a href={`/${locale}/account`} className="btn-primary w-fit">{t.emails.accountCta}</a>
       {user.emailVerifiedAt && (
         <div className="grid gap-4 rounded-3xl bg-paper p-5">
           <div className="flex items-center justify-between gap-3">

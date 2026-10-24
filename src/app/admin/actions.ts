@@ -7,6 +7,7 @@ import { ADMIN_COOKIE, isAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { adminSessionValue, checkPassword } from "@/lib/tokens";
 import { sendPendingEmails } from "@/lib/waitlist";
+import { PROGRESS_KEYS, clampStep } from "@/lib/progress";
 import { CHANNEL_STATUSES, TASK_STATUSES, channelSchema, nextStatus, quoteSchema, taskSchema, taskUpdateSchema } from "@/lib/validation";
 
 export async function login(formData: FormData) {
@@ -114,4 +115,15 @@ export async function toggleMilestone(formData: FormData) {
   if (existing) await prisma.appMeta.delete({ where: { key } });
   else await prisma.appMeta.create({ data: { key, value: new Date().toISOString() } });
   redirect("/admin#milestones");
+}
+
+export async function saveProgress(formData: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const values: [string, string][] = [
+    [PROGRESS_KEYS.step, String(clampStep(Number(formData.get("step"))))],
+    [PROGRESS_KEYS.noteEn, String(formData.get("noteEn") ?? "").trim().slice(0, 500)],
+    [PROGRESS_KEYS.noteAr, String(formData.get("noteAr") ?? "").trim().slice(0, 500)],
+  ];
+  await prisma.$transaction(values.map(([key, value]) => prisma.appMeta.upsert({ where: { key }, create: { key, value }, update: { value } })));
+  redirect("/admin#progress");
 }

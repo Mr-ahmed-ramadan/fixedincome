@@ -65,3 +65,32 @@ export function checkPassword(given: string, expected: string | undefined): bool
   // Compare hashes so lengths always match.
   return safeEqual(sign(`pw:${given}`, "agyal"), sign(`pw:${expected}`, "agyal"));
 }
+
+const MEMBER_SESSION_SECONDS = 30 * 24 * 60 * 60;
+
+/** Value of the member login cookie: `<userId>.<expiry>.<signature>`, valid 30 days. */
+export function createMemberSession(userId: string, now = Date.now(), key?: string): string {
+  const payload = `${userId}.${Math.floor(now / 1000) + MEMBER_SESSION_SECONDS}`;
+  return `${payload}.${sign(`member:${payload}`, key)}`;
+}
+
+export function readMemberSession(value: string | null | undefined, now = Date.now(), key?: string): string | null {
+  if (!value) return null;
+  const parts = value.split(".");
+  if (parts.length !== 3) return null;
+  const [userId, expRaw, sig] = parts;
+  const exp = Number(expRaw);
+  if (!userId || !Number.isFinite(exp)) return null;
+  if (!safeEqual(sig, sign(`member:${userId}.${expRaw}`, key))) return null;
+  if (exp * 1000 < now) return null;
+  return userId;
+}
+
+/** Stored instead of a login code, so a database leak doesn't reveal live codes. */
+export function hashLoginCode(userId: string, code: string, key?: string): string {
+  return sign(`login:${userId}:${code}`, key);
+}
+
+export function loginCodeMatches(userId: string, code: string, hash: string, key?: string): boolean {
+  return safeEqual(hashLoginCode(userId, code, key), hash);
+}

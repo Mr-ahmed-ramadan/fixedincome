@@ -21,8 +21,8 @@ const BUTTON = (label: string, href: string) =>
 <p style="margin:0 0 20px;font-size:13px;line-height:1.5;color:${BRAND.muted};word-break:break-all">${escape(href)}</p>`;
 
 /** "Where we are": done steps ticked, the current step highlighted, the rest greyed. */
-function timelineHtml(locale: Locale): string {
-  const tl = getDictionary(locale).timeline;
+function timelineHtml(locale: Locale, current: number): string {
+  const tl = { ...getDictionary(locale).timeline, current };
   const rows = tl.steps
     .map((step, i) => {
       const done = i < tl.current;
@@ -42,8 +42,8 @@ function timelineHtml(locale: Locale): string {
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%">${rows}</table></div>`;
 }
 
-function timelineText(locale: Locale): string {
-  const tl = getDictionary(locale).timeline;
+function timelineText(locale: Locale, current: number): string {
+  const tl = { ...getDictionary(locale).timeline, current };
   return [
     tl.title,
     ...tl.steps.map((s, i) => `${i < tl.current ? "[x]" : i === tl.current ? "[>]" : "[ ]"} ${s.t}${i === tl.current ? ` (${tl.now})` : ""}: ${s.d}`),
@@ -109,19 +109,42 @@ export function verifyEmail(_locale: Locale, name: string, link: string) {
   };
 }
 
-export function welcomeEmail(_locale: Locale, name: string, invite: string, unsubscribeUrl: string) {
+export function welcomeEmail(
+  _locale: Locale,
+  name: string,
+  invite: string,
+  unsubscribeUrl: string,
+  opts: { step?: number; accountUrl?: string } = {},
+) {
   const tt = (l: Locale) => getDictionary(l).emails;
+  const step = opts.step ?? getDictionary("en").timeline.current;
+  const account = (l: Locale) => (opts.accountUrl ? P(tt(l).accountText) + BUTTON(tt(l).accountCta, opts.accountUrl) : "");
+  const accountText = (l: Locale) => (opts.accountUrl ? `\n\n${tt(l).accountText}\n${opts.accountUrl}` : "");
   return {
     subject: bilingualSubject((t) => t.welcomeSubject),
     text:
-      bilingualText((l) => `${tt(l).welcomeIntro(name)}\n\n${timelineText(l)}\n\n${tt(l).inviteText}\n${invite}\n\n${tt(l).spamNote}\n\n${tt(l).foot}`) +
+      bilingualText((l) => `${tt(l).welcomeIntro(name)}\n\n${timelineText(l, step)}${accountText(l)}\n\n${tt(l).inviteText}\n${invite}\n\n${tt(l).spamNote}\n\n${tt(l).foot}`) +
       `\n\n${EMAIL_LANGS.map((l) => tt(l).unsubscribe).join(" · ")}: ${unsubscribeUrl}`,
     html: layout(
       bilingualHtml(
-        (l) => P(tt(l).welcomeIntro(name)) + timelineHtml(l) + P(tt(l).inviteText) + BUTTON(invite.replace(/^https?:\/\//, ""), invite) + SMALL(tt(l).spamNote),
+        (l) => P(tt(l).welcomeIntro(name)) + timelineHtml(l, step) + account(l) + P(tt(l).inviteText) + BUTTON(invite.replace(/^https?:\/\//, ""), invite) + SMALL(tt(l).spamNote),
       ),
       (l) => tt(l).foot,
       unsubscribeUrl,
+    ),
+  };
+}
+
+/** The 6-digit code a member types on /login. Codes are never queued: they expire in 10 minutes. */
+export function loginCodeEmail(name: string, code: string) {
+  const tt = (l: Locale) => getDictionary(l).emails;
+  const CODE = `<p style="margin:8px 0 20px;font-size:34px;font-weight:700;letter-spacing:.3em;color:${BRAND.ink}" dir="ltr">${escape(code)}</p>`;
+  return {
+    subject: `${getDictionary("en").emails.loginSubject}: ${code} | ${getDictionary("ar").emails.loginSubject}`,
+    text: bilingualText((l) => `${tt(l).loginBody(name)}\n\n${code}\n\n${tt(l).loginFoot}`),
+    html: layout(
+      bilingualHtml((l) => P(tt(l).loginBody(name)) + CODE + SMALL(tt(l).loginFoot)),
+      (l) => tt(l).foot,
     ),
   };
 }

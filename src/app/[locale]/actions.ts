@@ -12,6 +12,7 @@ import { allowFormSubmit, takeEmailBudget } from "@/lib/limits";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/locale";
 import { firstErrorField, joinSchema, note as noteSchema, partnerSchema, phoneOnlySchema } from "@/lib/validation";
 import { completeGoogleMember, joinWithEmail } from "@/lib/waitlist";
+import { endMemberSession, requestLoginCode, startMemberSession, verifyLoginCode } from "@/lib/member";
 
 export type FormState = {
   status: "idle" | "sent" | "error";
@@ -124,4 +125,44 @@ export async function completeAction(_prev: FormState, formData: FormData): Prom
     return { status: "error", field: "generic", values: typed(formData, ["dial", "phone", "note"]) };
   }
   redirect(`/${locale}/welcome/${code}`);
+}
+
+export type LoginState = {
+  step: "email" | "code";
+  email?: string;
+  error?: "email" | "code" | "locked" | "busy" | "rate" | "generic";
+  /** When the last code was requested (ms), for the "send a new code" countdown. */
+  sentAt?: number;
+};
+
+/** Log-in form: `intent=send` emails a code, `intent=verify` checks it and opens /account. */
+export async function loginAction(prev: LoginState, formData: FormData): Promise<LoginState> {
+  const locale = localeOf(formData);
+  const intent = formData.get("intent");
+  const email = String(formData.get("email") ?? prev.email ?? "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return { step: "email", error: "email" };
+
+  let userId: string | undefined;
+  try {
+    if (intent === "send") {
+      if (isBot(formData)) return { step: "code", email, sentAt: Date.now() };
+      if (!(await allowFormSubmit("login", await clientIp()))) return { ...prev, error: "rate" };
+      const res = await requestLoginCode(email);
+      return res === "busy" ? { step: prev.step, email, error: "busy" } : { step: "code", email, sentAt: Date.now() };
+    }
+    const code = String(formData.get("code") ?? "").replace(/\D/g, "");
+    const checked = await verifyLoginCode(email, code);
+    if (checked.result !== "ok") return { ...prev, step: "code", email, error: checked.result === "locked" ? "locked" : "code" };
+    userId = checked.userId;
+  } catch (e) {
+    console.error("loginAction failed", e);
+    return { ...prev, error: "generic" };
+  }
+  await startMemberSession(userId!);
+  redirect(`/${locale}/account`);
+}
+
+export async function logoutAction(formData: FormData) {
+  await endMemberSession();
+  redirect(`/${localeOf(formData)}/login`);
 }

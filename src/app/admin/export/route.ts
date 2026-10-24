@@ -49,13 +49,13 @@ export async function GET(req: Request) {
           (r) => [r.createdAt, r.institution, r.type, r.name, r.role, r.email, r.phone, r.message, r.locale],
         )
       : csvStream(
-          ["created", "name", "email", "phone", "language", "signup", "confirmed", "invite_code", "invited_by", "friends_invited", "utm_source", "utm_medium", "utm_campaign", "utm_content", "note", "unsubscribed", "email_pending"],
+          ["created", "name", "email", "phone", "language", "signup", "confirmed", "invite_code", "invited_by", "friends_invited", "utm_source", "utm_medium", "utm_campaign", "utm_content", "note", "unsubscribed", "email_pending", "last_login"],
           (cursor) =>
             prisma.waitlistUser.findMany({
               ...page(cursor),
               include: { referredBy: { select: { email: true } }, _count: { select: { referrals: true } } },
             }),
-          (r) => [r.createdAt, r.name, r.email, r.phone, r.locale, r.provider, r.emailVerifiedAt, r.referralCode, r.referredBy?.email, r._count.referrals, r.utmSource, r.utmMedium, r.utmCampaign, r.utmContent, r.note, r.unsubscribedAt, r.pendingEmail],
+          (r) => [r.createdAt, r.name, r.email, r.phone, r.locale, r.provider, r.emailVerifiedAt, r.referralCode, r.referredBy?.email, r._count.referrals, r.utmSource, r.utmMedium, r.utmCampaign, r.utmContent, r.note, r.unsubscribedAt, r.pendingEmail, r.lastLoginAt],
         );
 
   const name = `agyal-${type === "partners" ? "partners" : "waitlist"}-${new Date().toISOString().slice(0, 10)}.csv`;

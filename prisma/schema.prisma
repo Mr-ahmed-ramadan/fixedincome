@@ -23,6 +23,11 @@ model WaitlistUser {
   pendingEmail    String? // VERIFY | WELCOME when that email couldn't be sent yet (daily cap or provider error)
   unsubscribedAt  DateTime? // set by the unsubscribe link in our emails
   note            String? // optional message left when joining (read in /admin)
+  loginCodeHash      String? // HMAC of the current 6-digit login code (never the code itself)
+  loginCodeExpiresAt DateTime?
+  loginCodeSentAt    DateTime? // throttles "send a new code"
+  loginCodeTries     Int       @default(0)
+  lastLoginAt        DateTime?
   referralCode    String    @unique
   referredById    String?
   referredBy      WaitlistUser?  @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)

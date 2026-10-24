@@ -33,24 +33,33 @@ export function emailDailyCap(): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 90;
 }
 
+type Form = "join" | "partner" | "login";
+const FORM_LIMIT: Record<Form, number> = { join: 5, partner: 3, login: 5 };
+
 export const keys = {
   emailToday: () => `email:${utcDay()}`,
   emailMonth: () => `email-month:${utcDay().slice(0, 7)}`,
   blockedToday: () => `blocked:${utcDay()}`,
-  ip: (form: "join" | "partner", ip: string) => `${form}:ip:${ip}`,
+  ip: (form: Form, ip: string) => `${form}:ip:${ip}`,
 };
 
-/** Take one email from today's budget. False means today's cap is reached: queue the email instead. */
-export async function takeEmailBudget(): Promise<boolean> {
-  const ok = await tryConsume(keys.emailToday(), untilMidnightUtc(), emailDailyCap());
+/** Emails above the cap kept for login codes, which can't wait for tomorrow (90 + 10 = Resend free's 100/day). */
+export const LOGIN_EMAIL_RESERVE = 10;
+
+/**
+ * Take one email from today's budget. False means today's cap is reached: queue the email instead.
+ * `reserve` lets time-critical emails (login codes) use a few more than the cap.
+ */
+export async function takeEmailBudget(reserve = 0): Promise<boolean> {
+  const ok = await tryConsume(keys.emailToday(), untilMidnightUtc(), emailDailyCap() + reserve);
   // Monthly total, for the email-plan milestones in /admin.
   if (ok) await tryConsume(keys.emailMonth(), 32 * 24 * 60 * MINUTE, Number.MAX_SAFE_INTEGER);
   return ok;
 }
 
-/** Per-network limit for public forms: join 5 / 10 min, partner 3 / 10 min. */
-export async function allowFormSubmit(form: "join" | "partner", ip: string): Promise<boolean> {
-  const ok = await tryConsume(keys.ip(form, ip), 10 * MINUTE, form === "join" ? 5 : 3);
+/** Per-network limit for public forms, per 10 minutes: join 5, partner 3, login 5. */
+export async function allowFormSubmit(form: Form, ip: string): Promise<boolean> {
+  const ok = await tryConsume(keys.ip(form, ip), 10 * MINUTE, FORM_LIMIT[form]);
   if (!ok) await tryConsume(keys.blockedToday(), untilMidnightUtc(), Number.MAX_SAFE_INTEGER);
   return ok;
 }

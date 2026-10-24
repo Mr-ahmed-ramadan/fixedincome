@@ -8,6 +8,7 @@ import { APP_URL, inviteUrl } from "./site";
 import type { Attribution } from "./attribution";
 import { isLocale, type Locale } from "./locale";
 import { RESEND_AFTER, sentRecently, takeEmailBudget } from "./limits";
+import { currentProgress } from "./progress";
 
 type NewMember = {
   name: string;
@@ -93,10 +94,11 @@ export async function sendWelcome(user: { id: string; name: string; email: strin
   const locale = memberLocale(user.locale);
   if (user.unsubscribedAt) return false;
   const unsub = unsubscribeUrl(user);
+  const { step } = await currentProgress();
   const sent = await sendOrQueue(user.id, "WELCOME", () =>
     sendEmail({
       to: user.email,
-      ...welcomeEmail(locale, user.name, inviteUrl(locale, user.referralCode), unsub),
+      ...welcomeEmail(locale, user.name, inviteUrl(locale, user.referralCode), unsub, { step, accountUrl: `${APP_URL}/${locale}/account` }),
       headers: { "List-Unsubscribe": `<${unsub}>` },
     }),
   );

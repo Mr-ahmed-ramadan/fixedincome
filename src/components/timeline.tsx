@@ -1,7 +1,8 @@
 import type { Dictionary } from "@/i18n/dictionaries";
 
 /** "Where we are": finished steps ticked, the current one highlighted, the rest still ahead. */
-export function Timeline({ t }: { t: Dictionary["timeline"] }) {
+export function Timeline({ t: words, current }: { t: Dictionary["timeline"]; current?: number }) {
+  const t = { ...words, current: current ?? words.current };
   return (
     <div className="grid gap-3 rounded-3xl bg-paper p-5">
       <h2 className="text-sm font-bold uppercase tracking-[0.06em] text-accent rtl:normal-case rtl:tracking-normal">{t.title}</h2>

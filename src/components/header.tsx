@@ -31,6 +31,17 @@ export function Header({ t, locale, switchHref }: { t: Dictionary; locale: Local
         <div className="ms-auto flex items-center gap-1.5 md:ms-0 md:gap-2">
           <ThemeToggle labels={t.nav.theme} />
           <a
+            href={`/${locale}/account`}
+            aria-label={t.nav.account}
+            title={t.nav.account}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink/80 ring-1 ring-line transition hover:bg-ink/5 hover:text-ink"
+          >
+            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5" />
+            </svg>
+          </a>
+          <a
             href={switchHref}
             hrefLang={other}
             aria-label={t.nav.switchLabel}
@@ -42,7 +53,7 @@ export function Header({ t, locale, switchHref }: { t: Dictionary; locale: Local
             {t.nav.join}
           </a>
           <MobileNav
-            links={links}
+            links={[...links, [`/${locale}/account`, t.nav.account] as const]}
             join={{ href: `/${locale}#join`, label: t.hero.cta }}
             switchLang={{ href: switchHref, label: t.nav.switchTo, hrefLang: other }}
             labels={{ menu: t.nav.menu, close: t.nav.close }}
