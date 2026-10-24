@@ -335,8 +335,9 @@ const en = {
   timeline: {
     title: "Where we are",
     now: "Now",
-    current: 0, // index of the step we're on; change it as AGYAL progresses
+    current: 1, // default step (0-based) until one is picked in /admin → Overview → Progress
     steps: [
+      { t: "Platform built", d: "The AGYAL app and website are ready." },
       { t: "Waitlist open", d: "Investors and partners are signing up." },
       { t: "Building with founding partners", d: "Licensed brokers and banks who will hold and settle your investments." },
       { t: "Regulatory approvals", d: "Working with Egyptian regulators before any money moves." },
@@ -738,8 +739,9 @@ const ar: Dictionary = {
   timeline: {
     title: "أين نحن الآن",
     now: "الآن",
-    current: 0,
+    current: 1,
     steps: [
+      { t: "بناء المنصة", d: "تطبيق أجيال وموقعه جاهزان." },
       { t: "فتح قائمة الانتظار", d: "المستثمرون والشركاء يسجّلون الآن." },
       { t: "البناء مع الشركاء المؤسسين", d: "وسطاء وبنوك مرخّصون يحتفظون باستثماراتك ويسوّونها." },
       { t: "الموافقات التنظيمية", d: "نعمل مع الجهات الرقابية المصرية قبل أي تعامل مالي." },

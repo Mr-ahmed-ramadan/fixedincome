@@ -2,8 +2,11 @@ import { getDictionary } from "@/i18n/dictionaries";
 import type { Locale } from "./locale";
 import { prisma } from "./db";
 
-/** Where AGYAL is on the "Where we are" timeline, set in /admin → Overview. */
-export const PROGRESS_KEYS = { step: "progress-step", noteEn: "progress-note-en", noteAr: "progress-note-ar" } as const;
+/**
+ * Where AGYAL is on the "Where we are" timeline, set in /admin → Overview.
+ * The step key was renamed when "Platform built" became the first step, so an index saved for the old list is ignored.
+ */
+export const PROGRESS_KEYS = { step: "progress-stage", noteEn: "progress-note-en", noteAr: "progress-note-ar" } as const;
 
 export type Progress = { step: number; note: Record<Locale, string> };
 
