@@ -372,6 +372,7 @@ const BRAND_FILES: { file: string; label: string; use: string; dark?: boolean }[
   { file: "/og/og-ar.png", label: "Link preview, Arabic (1200×630)", use: "Shown when agyal.net/ar is shared" },
   { file: "/brand/agyal-facebook-cover.png", label: "Facebook cover, English and Arabic (1640×924)", use: "Facebook Page cover; text sits in the middle band computers show" },
   { file: "/brand/agyal-youtube-banner.png", label: "YouTube banner, English and Arabic (2560×1440)", use: "YouTube channel banner; text sits in the centre strip phones show" },
+  { file: "/brand/agyal-youtube-watermark.png", label: "YouTube video watermark (300×300, transparent)", use: "YouTube Studio → Customisation → Branding → Video watermark" },
 ];
 const BRAND_MOTION: { file: string; label: string; use: string; tall?: boolean; poster?: string }[] = [
   { file: "/brand/motion/agyal-logo-vertical-blue.mp4", label: "Vertical, with tagline (MP4, 5s)", use: "TikTok, Reels, Stories, YouTube Shorts (1080×1920)", tall: true, poster: "/brand/motion/agyal-logo-vertical-blue-poster.png" },
