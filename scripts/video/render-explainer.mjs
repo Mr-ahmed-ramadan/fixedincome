@@ -169,7 +169,8 @@ if (stills) {
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const ff = spawn("ffmpeg", ["-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "mjpeg", "-i", "-",
     ...(voice ? ["-i", voice.audio, "-ac", "2"] : ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"]), "-shortest",
-    "-c:v", "libx264", "-preset", "medium", "-crf", "24", "-tune", "grain", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", out], { stdio: ["pipe", "inherit", "inherit"] });
+    "-c:v", "libx264", "-profile:v", "main", "-level", "4.0", "-preset", "medium", "-crf", "24", "-tune", "grain", "-pix_fmt", "yuv420p",
+    "-c:a", "aac", "-b:a", "160k", "-ar", "44100", "-movflags", "+faststart", out], { stdio: ["pipe", "inherit", "inherit"] });
   const frames = Math.round(duration * FPS);
   for (let f = 0; f < frames; f++) {
     await page.evaluate(([t, f]) => window.seek(t, f), [f / FPS, f]);

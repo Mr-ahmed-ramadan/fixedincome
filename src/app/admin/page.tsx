@@ -382,7 +382,7 @@ const BRAND_MOTION: { file: string; label: string; use: string; tall?: boolean; 
 ];
 /** Explainer videos (vertical 1080×1920, silent: add your voice and in-app music). Made by scripts/video. */
 const BRAND_VIDEOS: { slug: string; title: string; use: string; voiced?: ("ar" | "en")[] }[] = [
-  { slug: "what-is-a-tbill", title: "What is a T-bill? · يعني إيه أذون خزانة؟", use: "Shorts, Reels, TikTok · Arabic with voice and music (46 s)", voiced: ["ar"] },
+  { slug: "what-is-a-tbill", title: "What is a T-bill? · يعني إيه أذون خزانة؟", use: "Shorts, Reels, TikTok · Arabic with your voice (49 s)", voiced: ["ar"] },
   { slug: "tbill-vs-bank", title: "Bank deposit or T-bill? · شهادة البنك ولا أذون الخزانة؟", use: "37 s · Shorts, Reels, TikTok" },
 ];
 
@@ -456,7 +456,7 @@ function Brand() {
                 <span className="text-muted">{v.use}</span>
                 <span className="flex flex-wrap gap-x-4 gap-y-1">
                   {v.voiced?.includes("ar") && (
-                    <a href={`/brand/videos/${v.slug}-ar-voice.mp4`} download className="font-semibold text-primary underline">Download Arabic (voice + music)</a>
+                    <a href={`/brand/videos/${v.slug}-ar-voice.mp4`} download className="font-semibold text-primary underline">Download Arabic (with voice)</a>
                   )}
                   <a href={`/brand/videos/${v.slug}-ar.mp4`} download className="text-primary underline">Download Arabic (silent)</a>
                   <a href={`/brand/videos/${v.slug}-en.mp4`} download className="text-primary underline">Download English</a>

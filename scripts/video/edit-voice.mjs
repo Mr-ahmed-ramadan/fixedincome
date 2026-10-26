@@ -8,7 +8,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
-const [slug, lang, recording, work] = process.argv.slice(2);
+const args = process.argv.slice(2);
+// --raw: keep the recording exactly as recorded (no effects, no music, original pacing); only the loudness is levelled.
+const raw = args.includes("--raw");
+const [slug, lang, recording, work] = args.filter((a) => a !== "--raw");
 const video = (await import(path.resolve(`scripts/video/explainers/${slug}.mjs`))).default(lang);
 const lines = JSON.parse(fs.readFileSync(`scripts/video/explainers/${slug}.voice-${lang}.json`, "utf8")).lines;
 if (lines.length !== video.captions.length) throw new Error(`${lines.length} recorded lines for ${video.captions.length} captions`);
@@ -17,6 +20,19 @@ const LEAD_IN = 0.5, SAME_SCENE_GAP = 0.35, NEW_SCENE_GAP = 0.6, PAD_BEFORE = 0.
 const sceneOf = (c) => video.scenes.findIndex((s) => c.start >= s.start && c.start < s.end);
 const ff = (args) => execFileSync("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", ...args], { stdio: "inherit" });
 fs.mkdirSync(work, { recursive: true });
+
+if (raw) {
+  const total = Math.ceil(Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", recording]).toString()) * 10) / 10;
+  const mix = path.join(work, `${slug}-${lang}-mix.wav`);
+  ff(["-i", recording, "-ac", "1", "-ar", "48000", "-af", "loudnorm=I=-15:TP=-1.5:LRA=11", mix]);
+  const timing = {
+    duration: total,
+    captions: lines.map(([s], i) => ({ start: +Math.max(0, s - 0.15).toFixed(2), end: +(i + 1 < lines.length ? lines[i + 1][0] - 0.15 : total).toFixed(2) })),
+  };
+  fs.writeFileSync(path.join(work, `${slug}-${lang}-timing.json`), JSON.stringify(timing, null, 2));
+  console.log(`raw voice ${total}s →`, mix);
+  process.exit(0);
+}
 
 // 1. Clean the whole recording once: rumble cut, gentle denoise, a touch deeper (formants kept, so it stays natural),
 //    warmth and presence, then even out peaks.
