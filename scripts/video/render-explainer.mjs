@@ -15,12 +15,24 @@ import zlib from "node:zlib";
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 
-const [slug, lang, fontsDir, outArg, flag] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const voiceAt = argv.indexOf("--voice");
+// --voice <timing.json> <audio>: re-time captions and scenes to a recorded voice (from edit-voice.mjs) and use it as the soundtrack.
+const voice = voiceAt >= 0 ? { timing: JSON.parse(fs.readFileSync(argv[voiceAt + 1], "utf8")), audio: argv[voiceAt + 2] } : null;
+if (voiceAt >= 0) argv.splice(voiceAt, 3);
+const [slug, lang, fontsDir, outArg, flag] = argv;
 const stills = flag === "--stills" || outArg === "--stills";
 const out = outArg && outArg !== "--stills" ? outArg : `public/brand/videos/${slug}-${lang}.mp4`;
 const W = 1080, H = 1920, FPS = 30;
 
 const video = (await import(path.resolve(`scripts/video/explainers/${slug}.mjs`))).default(lang);
+if (voice) {
+  // Each scene now starts with its first caption's new start and runs until the next scene starts.
+  const sceneOf = video.captions.map((c) => video.scenes.findIndex((sc) => c.start >= sc.start && c.start < sc.end));
+  video.captions = video.captions.map((c, i) => ({ ...c, ...voice.timing.captions[i] }));
+  const starts = video.scenes.map((_, k) => (k === 0 ? 0 : video.captions[sceneOf.indexOf(k)].start));
+  video.scenes = video.scenes.map((sc, k) => ({ ...sc, start: starts[k], end: k + 1 < starts.length ? starts[k + 1] : voice.timing.duration }));
+}
 const duration = video.scenes[video.scenes.length - 1].end;
 const ar = lang === "ar";
 const fontCss = fs.readFileSync(path.join(fontsDir, "local.css"), "utf8");
@@ -156,8 +168,8 @@ if (stills) {
 } else {
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const ff = spawn("ffmpeg", ["-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "mjpeg", "-i", "-",
-    "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-shortest",
-    "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", out], { stdio: ["pipe", "inherit", "inherit"] });
+    ...(voice ? ["-i", voice.audio, "-ac", "2"] : ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"]), "-shortest",
+    "-c:v", "libx264", "-preset", "medium", "-crf", "24", "-tune", "grain", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", out], { stdio: ["pipe", "inherit", "inherit"] });
   const frames = Math.round(duration * FPS);
   for (let f = 0; f < frames; f++) {
     await page.evaluate(([t, f]) => window.seek(t, f), [f / FPS, f]);
@@ -173,4 +185,4 @@ if (stills) {
   console.log("wrote", out);
 }
 await browser.close();
-fs.unlinkSync(tmp);
+fs.rmSync(tmp, { force: true });

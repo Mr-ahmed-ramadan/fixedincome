@@ -381,8 +381,8 @@ const BRAND_MOTION: { file: string; label: string; use: string; tall?: boolean; 
   { file: "/brand/motion/agyal-logo-light.gif", label: "GIF (light)", use: "WhatsApp, presentations, email signatures" },
 ];
 /** Explainer videos (vertical 1080×1920, silent: add your voice and in-app music). Made by scripts/video. */
-const BRAND_VIDEOS: { slug: string; title: string; use: string }[] = [
-  { slug: "what-is-a-tbill", title: "What is a T-bill? · يعني إيه أذون خزانة؟", use: "36 s · Shorts, Reels, TikTok" },
+const BRAND_VIDEOS: { slug: string; title: string; use: string; voiced?: ("ar" | "en")[] }[] = [
+  { slug: "what-is-a-tbill", title: "What is a T-bill? · يعني إيه أذون خزانة؟", use: "Shorts, Reels, TikTok · Arabic with voice and music (46 s)", voiced: ["ar"] },
   { slug: "tbill-vs-bank", title: "Bank deposit or T-bill? · شهادة البنك ولا أذون الخزانة؟", use: "37 s · Shorts, Reels, TikTok" },
 ];
 
@@ -442,8 +442,8 @@ function Brand() {
                 {(["ar", "en"] as const).map((l) => (
                   <video
                     key={l}
-                    src={`/brand/videos/${v.slug}-${l}.mp4`}
-                    poster={`/brand/videos/${v.slug}-${l}-poster.png`}
+                    src={`/brand/videos/${v.slug}-${l}${v.voiced?.includes(l) ? "-voice" : ""}.mp4`}
+                    poster={`/brand/videos/${v.slug}-${l}${v.voiced?.includes(l) ? "-voice" : ""}-poster.png`}
                     controls
                     preload="none"
                     playsInline
@@ -455,7 +455,10 @@ function Brand() {
                 <span className="font-semibold">{v.title}</span>
                 <span className="text-muted">{v.use}</span>
                 <span className="flex flex-wrap gap-x-4 gap-y-1">
-                  <a href={`/brand/videos/${v.slug}-ar.mp4`} download className="text-primary underline">Download Arabic</a>
+                  {v.voiced?.includes("ar") && (
+                    <a href={`/brand/videos/${v.slug}-ar-voice.mp4`} download className="font-semibold text-primary underline">Download Arabic (voice + music)</a>
+                  )}
+                  <a href={`/brand/videos/${v.slug}-ar.mp4`} download className="text-primary underline">Download Arabic (silent)</a>
                   <a href={`/brand/videos/${v.slug}-en.mp4`} download className="text-primary underline">Download English</a>
                   <a href={`/brand/videos/${v.slug}-script.txt`} target="_blank" rel="noreferrer" className="text-primary underline">Voice script</a>
                   <a href={`/brand/videos/${v.slug}-storyboard.png`} target="_blank" rel="noreferrer" className="text-primary underline">Storyboard</a>
