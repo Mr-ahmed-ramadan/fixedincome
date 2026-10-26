@@ -380,6 +380,12 @@ const BRAND_MOTION: { file: string; label: string; use: string; tall?: boolean; 
   { file: "/brand/motion/agyal-logo-square-light.mp4", label: "Square, light (MP4, 4s)", use: "Light-themed posts and slides (1080×1080)" },
   { file: "/brand/motion/agyal-logo-light.gif", label: "GIF (light)", use: "WhatsApp, presentations, email signatures" },
 ];
+/** Explainer videos (vertical 1080×1920, silent: add your voice and in-app music). Made by scripts/video. */
+const BRAND_VIDEOS: { slug: string; title: string; use: string }[] = [
+  { slug: "what-is-a-tbill", title: "What is a T-bill? · يعني إيه أذون خزانة؟", use: "36 s · Shorts, Reels, TikTok" },
+  { slug: "tbill-vs-bank", title: "Bank deposit or T-bill? · شهادة البنك ولا أذون الخزانة؟", use: "37 s · Shorts, Reels, TikTok" },
+];
+
 const BRAND_COLOURS = [
   ["Lapis (primary)", "#1D47A3"],
   ["Carnelian (accent)", "#D0643A"],
@@ -419,6 +425,44 @@ function Brand() {
             </figcaption>
           </figure>
         ))}
+      </section>
+
+      <section className="grid gap-4 rounded-3xl bg-card p-6 ring-1 ring-line/60">
+        <div className="grid gap-1">
+          <h2 className="text-lg font-semibold">Videos</h2>
+          <p className="text-sm text-muted">
+            Explainers in Arabic and English. They are silent: record your voice with the script (or send it to Claude to mix), and add music from the app when posting.
+            Numbers are indicative and dated on screen; re-render when rates change.
+          </p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2">
+          {BRAND_VIDEOS.map((v) => (
+            <figure key={v.slug} className="grid content-start gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                {(["ar", "en"] as const).map((l) => (
+                  <video
+                    key={l}
+                    src={`/brand/videos/${v.slug}-${l}.mp4`}
+                    poster={`/brand/videos/${v.slug}-${l}-poster.png`}
+                    controls
+                    preload="none"
+                    playsInline
+                    className="aspect-[9/16] w-full rounded-2xl object-cover ring-1 ring-line"
+                  />
+                ))}
+              </div>
+              <figcaption className="grid gap-1 text-sm">
+                <span className="font-semibold">{v.title}</span>
+                <span className="text-muted">{v.use}</span>
+                <span className="flex flex-wrap gap-x-4 gap-y-1">
+                  <a href={`/brand/videos/${v.slug}-ar.mp4`} download className="text-primary underline">Download Arabic</a>
+                  <a href={`/brand/videos/${v.slug}-en.mp4`} download className="text-primary underline">Download English</a>
+                  <a href={`/brand/videos/${v.slug}-script.txt`} target="_blank" rel="noreferrer" className="text-primary underline">Voice script</a>
+                </span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
 
       <section className="grid gap-4 rounded-3xl bg-card p-6 ring-1 ring-line/60">
