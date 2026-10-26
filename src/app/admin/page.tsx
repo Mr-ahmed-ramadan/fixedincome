@@ -458,6 +458,7 @@ function Brand() {
                   <a href={`/brand/videos/${v.slug}-ar.mp4`} download className="text-primary underline">Download Arabic</a>
                   <a href={`/brand/videos/${v.slug}-en.mp4`} download className="text-primary underline">Download English</a>
                   <a href={`/brand/videos/${v.slug}-script.txt`} target="_blank" rel="noreferrer" className="text-primary underline">Voice script</a>
+                  <a href={`/brand/videos/${v.slug}-storyboard.png`} target="_blank" rel="noreferrer" className="text-primary underline">Storyboard</a>
                 </span>
               </figcaption>
             </figure>
